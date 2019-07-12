@@ -345,7 +345,7 @@ def export_csv_to_influx():
     parser.add_argument('-db', '--dbname', nargs='?', required=True,
                         help='InfluxDB Database name.')
     parser.add_argument('-m', '--measurement', nargs='?', required=True,
-                        help='Metric column name.')
+                        help='Measurement name.')
     parser.add_argument('-t', '--time_column', nargs='?', default='timestamp',
                         help='Timestamp column name. Default: timestamp. '
                              'If no timestamp column, '
