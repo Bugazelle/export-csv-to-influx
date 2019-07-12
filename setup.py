@@ -22,7 +22,7 @@ setup(
     author_email='463407426@qq.com',
     keywords=['python', 'csv', 'influx'],
     install_requires=REQUIRES,
-    download_url='',
+    download_url='https://github.com/Bugazelle/export-csv-to-inlfux/archive/v{0}.tar.gz'.format(VERSION),
     url='https://github.com/Bugazelle/export-csv-to-inlfux',
     classifiers=(
         'Development Status :: Production/Stable',
