@@ -51,7 +51,6 @@ pip install ExportCsvToInflux
 
 You could use `export_csv_to_influx -h` to see the help guide.
 
-
 -c, --csv, Input CSV file path, or the folder path. **Mandatory**
 
 -d, --delimiter, CSV delimiter. Default: ','. 
@@ -60,9 +59,9 @@ You could use `export_csv_to_influx -h` to see the help guide.
 
 -s, --server, InfluxDB Server address. Default: localhost:8086.
 
--u, --user, InfluxDB User name.
+-u, --user, InfluxDB User name. Default: admin
 
--p, --password, InfluxDB Password. 
+-p, --password, InfluxDB Password. Default: admin
 
 -db, --dbname, InfluxDB Database name. **Mandatory**
 
@@ -80,29 +79,29 @@ You could use `export_csv_to_influx -h` to see the help guide.
 
 -b, --batch_size, Batch size when inserting data to influx. Default: 500.
 
--lslc, --limit_string_length_columns, Limit string length column. Default: None.
+-lslc, --limit_string_length_columns, Limit string length column, separated by comma. Default: None.
 
 -ls, --limit_length, Limit length. Default: 20.
 
--dd, --drop_database, Drop database before inserting data.
+-dd, --drop_database, Drop database before inserting data. Default: False.
 
--dm, --drop_measurement, Drop measurement before inserting data.
+-dm, --drop_measurement, Drop measurement before inserting data. Default: False.
 
--mc, --match_columns, Match the data you want to get for certain columns, separated by comma.
+-mc, --match_columns, Match the data you want to get for certain columns, separated by comma. Default: None.
 
--mbs, --match_by_string, Match by string, separated by comma.
+-mbs, --match_by_string, Match by string, separated by comma. Default: None.
 
--mbr, --match_by_regex, Match by regex, separated by comma.
+-mbr, --match_by_regex, Match by regex, separated by comma. Default: None.
 
--fic, --filter_columns, Filter the data you want to filter for certain columns, separated by comma.
+-fic, --filter_columns, Filter the data you want to filter for certain columns, separated by comma. Default: None.
 
--fibs, --filter_by_string, Filter by string, separated by comma.
+-fibs, --filter_by_string, Filter by string, separated by comma. Default: None.
 
--fibr, --filter_by_regex, Filter by regex, separated by comma.
+-fibr, --filter_by_regex, Filter by regex, separated by comma. Default: None.
 
--ecm, --enable_count_measurement, Enable count measurement.
+-ecm, --enable_count_measurement, Enable count measurement. Default: False.
 
--fi, --force_insert_even_csv_no_update, Force insert data to influx, even csv no update.
+-fi, --force_insert_even_csv_no_update, Force insert data to influx, even csv no update. Default: False.
 
 For more info, please refer to the https://github.com/Bugazelle/export-csv-to-inlfux
 '''
