@@ -1,7 +1,7 @@
-from influx_object import InfluxObject
+from .influx_object import InfluxObject
 from collections import defaultdict
-from base_object import BaseObject
-from csv_object import CSVObject
+from .base_object import BaseObject
+from .csv_object import CSVObject
 from pytz import timezone
 import argparse
 import datetime
@@ -338,9 +338,9 @@ def export_csv_to_influx():
                         help='CSV lineterminator. Default: \'\\n\'.')
     parser.add_argument('-s', '--server', nargs='?', default='localhost:8086',
                         help='InfluxDB Server address. Default: localhost:8086')
-    parser.add_argument('-u', '--user', nargs='?', default='root',
+    parser.add_argument('-u', '--user', nargs='?', default='admin',
                         help='InfluxDB User name.')
-    parser.add_argument('-p', '--password', nargs='?', default='root',
+    parser.add_argument('-p', '--password', nargs='?', default='admin',
                         help='InfluxDB Password.')
     parser.add_argument('-db', '--dbname', nargs='?', required=True,
                         help='InfluxDB Database name.')
@@ -355,35 +355,36 @@ def export_csv_to_influx():
     parser.add_argument('-tz', '--time_zone', default='UTC',
                         help='Timezone of supplied data. Default: UTC')
     parser.add_argument('-fc', '--field_columns', nargs='?', required=True,
-                        help='List of csv columns to use as fields, separated by comma, Default: value')
+                        help='List of csv columns to use as fields, separated by comma')
     parser.add_argument('-tc', '--tag_columns', nargs='?', required=True,
-                        help='List of csv columns to use as tags, separated by comma, Default: host')
+                        help='List of csv columns to use as tags, separated by comma')
     parser.add_argument('-b', '--batch_size', default=500,
                         help='Batch size when inserting data to influx. Default: 500.')
     parser.add_argument('-lslc', '--limit_string_length_columns', default=None,
-                        help='Limit string length column. Default: None.')
+                        help='Limit string length columns, separated by comma. Default: None.')
     parser.add_argument('-ls', '--limit_length', default=20,
                         help='Limit length. Default: 20.')
     parser.add_argument('-dd', '--drop_database', default=False,
-                        help='Drop database before inserting data.')
+                        help='Drop database before inserting data. Default: False')
     parser.add_argument('-dm', '--drop_measurement', default=False,
-                        help='Drop measurement before inserting data.')
+                        help='Drop measurement before inserting data. Default: False')
     parser.add_argument('-mc', '--match_columns', default=None,
-                        help='Match the data you want to get for certain columns, separated by comma.')
+                        help='Match the data you want to get for certain columns, separated by comma. Default: None')
     parser.add_argument('-mbs', '--match_by_string', default=None,
-                        help='Match by string, separated by comma.')
+                        help='Match by string, separated by comma. Default: None')
     parser.add_argument('-mbr', '--match_by_regex', default=None,
-                        help='Match by regex, separated by comma.')
+                        help='Match by regex, separated by comma. Default: None')
     parser.add_argument('-fic', '--filter_columns', default=None,
-                        help='Filter the data you want to filter for certain columns, separated by comma.')
+                        help='Filter the data you want to filter for certain columns, separated by comma. '
+                             'Default: None')
     parser.add_argument('-fibs', '--filter_by_string', default=None,
-                        help='Filter by string, separated by comma.')
+                        help='Filter by string, separated by comma. Default: None')
     parser.add_argument('-fibr', '--filter_by_regex', default=None,
-                        help='Filter by regex, separated by comma.')
-    parser.add_argument('-ecm', '--enable_count_measurement', default=None,
-                        help='Enable count measurement.')
+                        help='Filter by regex, separated by comma. Default: None')
+    parser.add_argument('-ecm', '--enable_count_measurement', default=False,
+                        help='Enable count measurement. Default: False')
     parser.add_argument('-fi', '--force_insert_even_csv_no_update', default=False,
-                        help='Force insert data to influx, even csv no update.')
+                        help='Force insert data to influx, even csv no update. Default: False')
 
     args = parser.parse_args()
     exporter = ExporterObject()

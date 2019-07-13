@@ -1,5 +1,5 @@
 from collections import defaultdict
-from base_object import BaseObject
+from .base_object import BaseObject
 from glob import glob
 import hashlib
 import time
