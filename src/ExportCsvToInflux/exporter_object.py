@@ -1,6 +1,7 @@
 from .influx_object import InfluxObject
 from collections import defaultdict
 from .base_object import BaseObject
+from .__version__ import __version__
 from .csv_object import CSVObject
 from pytz import timezone
 import argparse
@@ -39,39 +40,65 @@ class ExporterObject(object):
                                  csv_file_length=0):
         """Private Function: check_match_and_filter"""
 
-        check_status = False
-        string_keys = list()
-        regex_keys = list()
+        check_status = dict()
         for k, v in row.items():
+            key_status = k in check_columns
+
+            # Init key status
+            if key_status and k not in check_status.keys():
+                check_status[k] = False
+
             # Init match count
-            if k in check_columns and k not in self.match_count.keys() and check_type == 'match':
+            if key_status and k not in self.match_count.keys() and check_type == 'match':
                 self.match_count[k] = 0
 
             # Init filter count
-            if k in check_columns and k not in self.filter_count.keys() and check_type == 'filter':
+            if key_status and k not in self.filter_count.keys() and check_type == 'filter':
                 self.filter_count[k] = csv_file_length
 
-            if k in check_columns and v in check_by_string:
-                check_status = True
-                if k not in regex_keys:
-                    string_keys.append(k)
-                    if check_type == 'match':
-                        self.match_count[k] += 1
-                    if check_type == 'filter':
-                        self.filter_count[k] -= 1
-
-            # Check regex
+            # Check string, regex
+            check_by_string_status = v in check_by_string
             check_by_regex_status = any(re.search(the_match, str(v), re.IGNORECASE) for the_match in check_by_regex)
-            if k in check_columns and check_by_regex_status:
-                check_status = True
-                if k not in string_keys:
-                    regex_keys.append(k)
-                    if check_type == 'match':
-                        self.match_count[k] += 1
-                    if check_type == 'filter':
-                        self.filter_count[k] -= 1
+            if key_status and (check_by_string_status or check_by_regex_status):
+                check_status[k] = True
+                if check_type == 'match':
+                    self.match_count[k] += 1
+                if check_type == 'filter':
+                    self.filter_count[k] -= 1
 
-        return check_status
+        # Return status
+        value_status = check_status.values()
+        if value_status:
+            # Default match: check all match
+            status = all(value_status)
+            if check_type == 'filter':
+                # If filter type: check any match
+                status = any(value_status)
+        else:
+            status = False
+
+        # print('')
+        # print('-' * 20)
+        # print(check_type)
+        # print(row)
+        # print(check_status)
+        # print(value_status)
+        # print(status)
+
+        return status
+
+    @staticmethod
+    def __validate_match_and_filter(csv_headers, check_columns):
+        """Private Function: validate_match_and_filter """
+
+        if check_columns:
+            validate_check_columns = all(check_column in csv_headers for check_column in check_columns)
+            if validate_check_columns is False:
+                print('Warning: Not all columns {0} in csv headers {1}. '
+                      'Those headers will be ignored.'.format(check_columns, csv_headers))
+                check_columns = list(set(csv_headers).intersection(set(check_columns)))
+
+        return check_columns
 
     @staticmethod
     def __unix_time_millis(dt):
@@ -143,6 +170,25 @@ class ExporterObject(object):
         influx_object = InfluxObject(db_server_name=db_server_name, db_user=db_user, db_password=db_password)
         base_object = BaseObject()
 
+        # Init: Arguments
+        tag_columns = base_object.str_to_list(tag_columns)
+        field_columns = base_object.str_to_list(field_columns)
+        limit_string_length_columns = [] if str(limit_string_length_columns).lower() == 'none' \
+            else limit_string_length_columns
+        limit_string_length_columns = base_object.str_to_list(limit_string_length_columns)
+        match_columns = [] if str(match_columns).lower() == 'none' else match_columns
+        match_columns = base_object.str_to_list(match_columns)
+        match_by_string = [] if str(match_by_string).lower() == 'none' else match_by_string
+        match_by_string = base_object.str_to_list(match_by_string)
+        match_by_regex = [] if str(match_by_regex).lower() == 'none' else match_by_regex
+        match_by_regex = base_object.str_to_list(match_by_regex, lower=False)
+        filter_columns = [] if str(filter_columns).lower() == 'none' else filter_columns
+        filter_columns = base_object.str_to_list(filter_columns)
+        filter_by_string = [] if str(filter_by_string).lower() == 'none' else filter_by_string
+        filter_by_string = base_object.str_to_list(filter_by_string)
+        filter_by_regex = [] if str(filter_by_regex).lower() == 'none' else filter_by_regex
+        filter_by_regex = base_object.str_to_list(filter_by_regex)
+
         # Init: database behavior
         drop_database = self.convert_boole(drop_database)
         drop_measurement = self.convert_boole(drop_measurement)
@@ -154,6 +200,8 @@ class ExporterObject(object):
             influx_object.drop_measurement(db_name, count_measurement)
         if drop_database:
             influx_object.drop_database(db_name)
+        client = influx_object.create_influx_db_if_not_exists(db_name)
+        client.switch_user(db_user, db_password)
 
         # Init: batch_size
         try:
@@ -172,6 +220,7 @@ class ExporterObject(object):
         for csv_file_item in csv_file_generator:
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
             csv_file_md5 = csv_object.get_file_md5(csv_file_item)
+            csv_headers = csv_object.get_csv_header(csv_file_item)
             with open(csv_file_item) as f:
                 csv_reader = csv.DictReader(f, delimiter=delimiter, lineterminator=lineterminator)
                 time_column_exists = True
@@ -184,33 +233,15 @@ class ExporterObject(object):
                         time_column_exists = False
                     break
 
-            # Connect DB
-            client = influx_object.create_influx_db_if_not_exists(db_name)
-            client.switch_user(db_user, db_password)
-
-            # Format tags, fields, limit_string_length_columns, match_columns, filter_columns
-            tag_columns = base_object.str_to_list(tag_columns)
-            field_columns = base_object.str_to_list(field_columns)
-            limit_string_length_columns = [] if str(limit_string_length_columns).lower() == 'none' \
-                else limit_string_length_columns
-            limit_string_length_columns = base_object.str_to_list(limit_string_length_columns)
-            match_columns = [] if str(match_columns).lower() == 'none' else match_columns
-            match_columns = base_object.str_to_list(match_columns)
-            match_by_string = [] if str(match_by_string).lower() == 'none' else match_by_string
-            match_by_string = base_object.str_to_list(match_by_string)
-            match_by_regex = [] if str(match_by_regex).lower() == 'none' else match_by_regex
-            match_by_regex = base_object.str_to_list(match_by_regex, lower=False)
-            filter_columns = [] if str(filter_columns).lower() == 'none' else filter_columns
-            filter_columns = base_object.str_to_list(filter_columns)
-            filter_by_string = [] if str(filter_by_string).lower() == 'none' else filter_by_string
-            filter_by_string = base_object.str_to_list(filter_by_string)
-            filter_by_regex = [] if str(filter_by_regex).lower() == 'none' else filter_by_regex
-            filter_by_regex = base_object.str_to_list(filter_by_regex)
+            # Validate match_columns, filter_columns
+            match_columns = self.__validate_match_and_filter(csv_headers, match_columns)
+            filter_columns = self.__validate_match_and_filter(csv_headers, filter_columns)
 
             # Check the timestamp, and generate the csv with checksum
             new_csv_file = 'influx.csv'
             new_csv_file = os.path.join(current_dir, new_csv_file)
             new_csv_file_exists = os.path.exists(new_csv_file)
+            no_new_data_status = False
             if new_csv_file_exists:
                 with open(new_csv_file) as f:
                     csv_reader = csv.DictReader(f, delimiter=delimiter, lineterminator=lineterminator)
@@ -218,8 +249,11 @@ class ExporterObject(object):
                         new_csv_file_md5 = row['md5']
                         if new_csv_file_md5 == csv_file_md5 and force_insert_even_csv_no_update is False:
                             print('Info: No new data found, existing...')
-                            sys.exit(0)
+                            no_new_data_status = True
+                            # sys.exit(0)
                         break
+            if no_new_data_status:
+                continue
             data = [{'md5': [csv_file_md5] * csv_file_length}]
             if time_column_exists is False:
                 modified_time = csv_object.get_file_modify_time(csv_file_item)
@@ -232,19 +266,29 @@ class ExporterObject(object):
             timestamp = 0
             convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(file_name=new_csv_file)
             for row in convert_csv_data_to_int_float:
-                # Process Match & Filter
-                if match_columns or filter_columns:
-                    match_status = self.__check_match_and_filter(row,
-                                                                 match_columns,
-                                                                 match_by_string,
-                                                                 match_by_regex,
-                                                                 check_type='match')
-                    filter_status = self.__check_match_and_filter(row,
-                                                                  filter_columns,
-                                                                  filter_by_string,
-                                                                  filter_by_regex,
-                                                                  check_type='filter',
-                                                                  csv_file_length=csv_file_length)
+                # Process Match & Filter: If match_columns exists and filter_columns not exists
+                match_status = self.__check_match_and_filter(row,
+                                                             match_columns,
+                                                             match_by_string,
+                                                             match_by_regex,
+                                                             check_type='match')
+                filter_status = self.__check_match_and_filter(row,
+                                                              filter_columns,
+                                                              filter_by_string,
+                                                              filter_by_regex,
+                                                              check_type='filter',
+                                                              csv_file_length=csv_file_length)
+                if match_columns and not filter_columns:
+                    if match_status is False:
+                        continue
+
+                # Process Match & Filter: If match_columns not exists and filter_columns exists
+                if not match_columns and filter_columns:
+                    if filter_status is True:
+                        continue
+
+                # Process Match & Filter: If match_columns, filter_columns both exists
+                if match_columns and filter_columns:
                     if match_status is False and filter_status is True:
                         continue
 
@@ -330,61 +374,63 @@ class ExporterObject(object):
 
 def export_csv_to_influx():
     parser = argparse.ArgumentParser(description='CSV to InfluxDB.')
-    parser.add_argument('-c', '--csv', nargs='?', required=True,
+    parser.add_argument('-c', '--csv', required=True,
                         help='Input CSV file.')
-    parser.add_argument('-d', '--delimiter', nargs='?', required=False, default=',',
+    parser.add_argument('-d', '--delimiter', nargs='?', default=',', const=',',
                         help='CSV delimiter. Default: \',\'.')
-    parser.add_argument('-lt', '--lineterminator', nargs='?', required=False, default='\n',
+    parser.add_argument('-lt', '--lineterminator', nargs='?', default='\n', const='\n',
                         help='CSV lineterminator. Default: \'\\n\'.')
-    parser.add_argument('-s', '--server', nargs='?', default='localhost:8086',
+    parser.add_argument('-s', '--server', nargs='?', default='localhost:8086', const='localhost:8086',
                         help='InfluxDB Server address. Default: localhost:8086')
-    parser.add_argument('-u', '--user', nargs='?', default='admin',
+    parser.add_argument('-u', '--user', nargs='?', default='admin', const='admin',
                         help='InfluxDB User name.')
-    parser.add_argument('-p', '--password', nargs='?', default='admin',
+    parser.add_argument('-p', '--password', nargs='?', default='admin', const='admin',
                         help='InfluxDB Password.')
-    parser.add_argument('-db', '--dbname', nargs='?', required=True,
+    parser.add_argument('-db', '--dbname', required=True,
                         help='InfluxDB Database name.')
-    parser.add_argument('-m', '--measurement', nargs='?', required=True,
+    parser.add_argument('-m', '--measurement', required=True,
                         help='Measurement name.')
-    parser.add_argument('-t', '--time_column', nargs='?', default='timestamp',
+    parser.add_argument('-t', '--time_column', nargs='?', default='timestamp', const='timestamp',
                         help='Timestamp column name. Default: timestamp. '
                              'If no timestamp column, '
                              'the timestamp is set to the last file modify time for whole csv rows')
-    parser.add_argument('-tf', '--time_format', nargs='?', default='%Y-%m-%d %H:%M:%S',
+    parser.add_argument('-tf', '--time_format', nargs='?', default='%Y-%m-%d %H:%M:%S', const='%Y-%m-%d %H:%M:%S',
                         help='Timestamp format. Default: \'%%Y-%%m-%%d %%H:%%M:%%S\' e.g.: 1970-01-01 00:00:00')
-    parser.add_argument('-tz', '--time_zone', default='UTC',
+    parser.add_argument('-tz', '--time_zone', nargs='?', default='UTC', const='UTC',
                         help='Timezone of supplied data. Default: UTC')
-    parser.add_argument('-fc', '--field_columns', nargs='?', required=True,
+    parser.add_argument('-fc', '--field_columns', required=True,
                         help='List of csv columns to use as fields, separated by comma')
-    parser.add_argument('-tc', '--tag_columns', nargs='?', required=True,
+    parser.add_argument('-tc', '--tag_columns', required=True,
                         help='List of csv columns to use as tags, separated by comma')
-    parser.add_argument('-b', '--batch_size', default=500,
+    parser.add_argument('-b', '--batch_size', nargs='?', default=500, const=500,
                         help='Batch size when inserting data to influx. Default: 500.')
-    parser.add_argument('-lslc', '--limit_string_length_columns', default=None,
+    parser.add_argument('-lslc', '--limit_string_length_columns',nargs='?',  default=None, const=None,
                         help='Limit string length columns, separated by comma. Default: None.')
-    parser.add_argument('-ls', '--limit_length', default=20,
+    parser.add_argument('-ls', '--limit_length', nargs='?', default=20, const=20,
                         help='Limit length. Default: 20.')
-    parser.add_argument('-dd', '--drop_database', default=False,
+    parser.add_argument('-dd', '--drop_database', nargs='?', default=False, const=False,
                         help='Drop database before inserting data. Default: False')
-    parser.add_argument('-dm', '--drop_measurement', default=False,
+    parser.add_argument('-dm', '--drop_measurement', nargs='?', default=False, const=False,
                         help='Drop measurement before inserting data. Default: False')
-    parser.add_argument('-mc', '--match_columns', default=None,
-                        help='Match the data you want to get for certain columns, separated by comma. Default: None')
-    parser.add_argument('-mbs', '--match_by_string', default=None,
+    parser.add_argument('-mc', '--match_columns', nargs='?', default=None, const=None,
+                        help='Match the data you want to get for certain columns, separated by comma. '
+                             'Match Rule: All matches, then match. Default: None')
+    parser.add_argument('-mbs', '--match_by_string', nargs='?', default=None, const=None,
                         help='Match by string, separated by comma. Default: None')
-    parser.add_argument('-mbr', '--match_by_regex', default=None,
+    parser.add_argument('-mbr', '--match_by_regex', nargs='?', default=None, const=None,
                         help='Match by regex, separated by comma. Default: None')
-    parser.add_argument('-fic', '--filter_columns', default=None,
+    parser.add_argument('-fic', '--filter_columns', nargs='?', default=None, const=None,
                         help='Filter the data you want to filter for certain columns, separated by comma. '
-                             'Default: None')
-    parser.add_argument('-fibs', '--filter_by_string', default=None,
+                             'Filter Rule: Any one matches, then match. Default: None')
+    parser.add_argument('-fibs', '--filter_by_string', nargs='?', default=None, const=None,
                         help='Filter by string, separated by comma. Default: None')
-    parser.add_argument('-fibr', '--filter_by_regex', default=None,
+    parser.add_argument('-fibr', '--filter_by_regex', nargs='?', default=None, const=None,
                         help='Filter by regex, separated by comma. Default: None')
-    parser.add_argument('-ecm', '--enable_count_measurement', default=False,
+    parser.add_argument('-ecm', '--enable_count_measurement', nargs='?', default=False, const=False,
                         help='Enable count measurement. Default: False')
-    parser.add_argument('-fi', '--force_insert_even_csv_no_update', default=False,
+    parser.add_argument('-fi', '--force_insert_even_csv_no_update', nargs='?', default=False, const=False,
                         help='Force insert data to influx, even csv no update. Default: False')
+    parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args()
     exporter = ExporterObject()

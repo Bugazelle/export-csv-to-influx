@@ -48,10 +48,10 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -ls, --limit_length, Limit length. Default: 20.
 -dd, --drop_database, Drop database before inserting data. Default: False.
 -dm, --drop_measurement, Drop measurement before inserting data. Default: False.
--mc, --match_columns, Match the data you want to get for certain columns, separated by comma. Default: None.
+-mc, --match_columns, Match the data you want to get for certain columns, separated by comma. Match Rule: All matches, then match. Default: None.
 -mbs, --match_by_string, Match by string, separated by comma. Default: None.
 -mbr, --match_by_regex, Match by regex, separated by comma. Default: None.
--fic, --filter_columns, Filter the data you want to filter for certain columns, separated by comma. Default: None.
+-fic, --filter_columns, Filter the data you want to filter for certain columns, separated by comma. Filter Rule: Any one filter success, the filter. Default: None.
 -fibs, --filter_by_string, Filter by string, separated by comma. Default: None.
 -fibr, --filter_by_regex, Filter by regex, separated by comma. Default: None.
 -ecm, --enable_count_measurement, Enable count measurement. Default: False.
@@ -97,6 +97,7 @@ timestamp,url,response_time
     --field_columns response_time \
     --user admin \
     --password admin \
+    --force_insert_even_csv_no_update True \
     --server 127.0.0.1:8086
     ```
 
@@ -112,6 +113,7 @@ timestamp,url,response_time
     --user admin \
     --password admin \
     --server 127.0.0.1:8086 \
+    --force_insert_even_csv_no_update True \
     --drop_database=True
     ```
 
@@ -128,11 +130,30 @@ timestamp,url,response_time
     --password test-automation-monitoring-2019 \
     --server 127.0.0.1:8086 \
     --drop_database=True \
+    --force_insert_even_csv_no_update True \
     --match_columns=timestamp,url \
     --match_by_reg='2019-07-12,sample-\d+'
     ```
+    
+4. Filter part of data, and the export into influx: **url filter sample**
 
-4. Enable count measurement. A new measurement named: **demo.count** generated
+    ``` 
+    export_csv_to_influx \
+    --csv demo.csv \
+    --dbname demo \
+    --measurement demo \
+    --tag_columns url \
+    --field_columns response_time \
+    --user admin \
+    --password test-automation-monitoring-2019 \
+    --server 127.0.0.1:8086 \
+    --drop_database True \
+    --force_insert_even_csv_no_update True \
+    --filter_columns timestamp,url \
+    --filter_by_reg 'sample'
+    ```
+
+5. Enable count measurement. A new measurement named: **demo.count** generated, with match: **timestamp matches 2019-07-12 and url matches sample-\d+**
 
     ```
     export_csv_to_influx \
@@ -145,10 +166,21 @@ timestamp,url,response_time
     --password admin \
     --server 127.0.0.1:8086 \
     --drop_database True \
+    --force_insert_even_csv_no_update True \
     --match_columns timestamp,url \
     --match_by_reg '2019-07-12,sample-\d+' \
-    --force_insert_even_csv_no_update True \
     --enable_count_measurement True 
+    ```
+    
+    The count measurement is:
+    
+    ```text
+    select * from "demo.count"
+ 
+    name: demo.count
+    time                match_timestamp match_url total
+    ----                --------------- --------- -----
+    1562957134000000000 3               2         9
     ```
 
 ## Special Thanks
