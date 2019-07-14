@@ -3,7 +3,7 @@ import os
 import re
 
 CURDIR = os.path.dirname(os.path.abspath(__file__))
-url = 'https://github.com/Bugazelle/export-csv-to-inlfux'
+url = 'https://github.com/Bugazelle/export-csv-to-influx'
 
 with open(os.path.join(CURDIR, 'src', 'ExportCsvToInflux', '__version__.py')) as f:
     VERSION = re.search("__version__ = '(.*)'", f.read()).group(1)
