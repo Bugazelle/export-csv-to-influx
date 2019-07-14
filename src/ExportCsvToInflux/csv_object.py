@@ -15,6 +15,25 @@ class CSVObject(object):
         self.delimiter = delimiter
         self.lineterminator = lineterminator
 
+    def get_csv_header(self, file_name):
+        """Function: get_csv_header.
+
+        :param file_name: the file name
+        :return return csv header as list
+
+        """
+
+        self.valid_file_exit(file_name)
+
+        with open(file_name) as f:
+            sniffer = csv.Sniffer()
+            has_header = sniffer.has_header(f.read(40960))
+            f.seek(0)
+            csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
+            headers = csv_reader.fieldnames if has_header else []
+
+            return headers
+
     @staticmethod
     def search_files_in_dir(directory, match_suffix='.csv', filter_pattern='influx.csv'):
         """Function: search_files_in_dir
