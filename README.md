@@ -127,7 +127,7 @@ timestamp,url,response_time
     --tag_columns url \
     --field_columns response_time \
     --user admin \
-    --password test-automation-monitoring-2019 \
+    --password admin \
     --server 127.0.0.1:8086 \
     --drop_database=True \
     --force_insert_even_csv_no_update True \
@@ -145,7 +145,7 @@ timestamp,url,response_time
     --tag_columns url \
     --field_columns response_time \
     --user admin \
-    --password test-automation-monitoring-2019 \
+    --password admin \
     --server 127.0.0.1:8086 \
     --drop_database True \
     --force_insert_even_csv_no_update True \
