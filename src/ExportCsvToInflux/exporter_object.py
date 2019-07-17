@@ -88,8 +88,8 @@ class ExporterObject(object):
         return status
 
     @staticmethod
-    def __validate_match_and_filter(csv_headers, check_columns):
-        """Private Function: validate_match_and_filter """
+    def __validate_columns(csv_headers, check_columns):
+        """Private Function: validate_columns """
 
         if check_columns:
             validate_check_columns = all(check_column in csv_headers for check_column in check_columns)
@@ -221,6 +221,25 @@ class ExporterObject(object):
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
             csv_file_md5 = csv_object.get_file_md5(csv_file_item)
             csv_headers = csv_object.get_csv_header(csv_file_item)
+
+            # Validate csv_headers
+            if not csv_headers:
+                print('Error: The csv file {0} has no header detected. Exporter stopping...'.format(csv_file_item))
+                continue
+
+            # Validate field_columns, tag_columns, match_columns, filter_columns
+            field_columns = self.__validate_columns(csv_headers, field_columns)
+            tag_columns = self.__validate_columns(csv_headers, tag_columns)
+            if not field_columns:
+                print('Error: The input --field_columns does not expected. '
+                      'Please check the fields are in csv headers or not. Exporter stopping...')
+            if not tag_columns:
+                print('Error: The input --tag_columns does not expected. '
+                      'Please check the fields are in csv headers or not. Exporter stopping...')
+            match_columns = self.__validate_columns(csv_headers, match_columns)
+            filter_columns = self.__validate_columns(csv_headers, filter_columns)
+
+            # Validate time_column
             with open(csv_file_item) as f:
                 csv_reader = csv.DictReader(f, delimiter=delimiter, lineterminator=lineterminator)
                 time_column_exists = True
@@ -232,10 +251,6 @@ class ExporterObject(object):
                               'We will use the csv last modified time as time column')
                         time_column_exists = False
                     break
-
-            # Validate match_columns, filter_columns
-            match_columns = self.__validate_match_and_filter(csv_headers, match_columns)
-            filter_columns = self.__validate_match_and_filter(csv_headers, filter_columns)
 
             # Check the timestamp, and generate the csv with checksum
             new_csv_file = 'influx.csv'

@@ -203,7 +203,7 @@ class CSVObject(object):
                     value = row[key]
                     int_status = int_type[key]
                     if int_status is True:
-                        row[key] = int(value) if int_type[key] is True else value
+                        row[key] = int(float(value)) if int_type[key] is True else value
                     else:
                         row[key] = float(value) if float_type[key] is True else value
                 yield row
@@ -211,7 +211,7 @@ class CSVObject(object):
                     for key in keys:
                         int_status = int_type[key]
                         if int_status is True:
-                            row[key] = int(key) if int_type[key] is True else key
+                            row[key] = int(float(key)) if int_type[key] is True else key
                         else:
                             row[key] = float(key) if float_type[key] is True else key
                     yield row
@@ -238,9 +238,18 @@ class CSVObject(object):
         message = 'Error: The data should be list type, the item should be dict. Or the json type as following' \
                   'for example: [{"new_header_1": ["new_value_1", "new_value_2", "new_value_3"]}, ' \
                   '{"new_header_2": ["new_value_1", "new_value_2", "new_value_3"]}]'
-        if data_type is not list and data_type is not str and data_type is not unicode:
+        try:
+            check_data_type = data_type is not list and data_type is not str and data_type is not unicode
+        except NameError:
+            check_data_type = data_type is not list and data_type is not str
+        if check_data_type:
             raise Exception(message)
-        if data_type is str or data_type is unicode:
+
+        try:
+            check_data_type = data_type is str or data_type is unicode
+        except NameError:
+            check_data_type = data_type is str
+        if check_data_type:
             try:
                 data = json.loads(data)
             except ValueError:
