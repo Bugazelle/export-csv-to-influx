@@ -203,7 +203,7 @@ class CSVObject(object):
                     value = row[key]
                     int_status = int_type[key]
                     if int_status is True:
-                        row[key] = int(value) if int_type[key] is True else value
+                        row[key] = int(float(value)) if int_type[key] is True else value
                     else:
                         row[key] = float(value) if float_type[key] is True else value
                 yield row
@@ -211,7 +211,7 @@ class CSVObject(object):
                     for key in keys:
                         int_status = int_type[key]
                         if int_status is True:
-                            row[key] = int(key) if int_type[key] is True else key
+                            row[key] = int(float(key)) if int_type[key] is True else key
                         else:
                             row[key] = float(key) if float_type[key] is True else key
                     yield row
