@@ -156,6 +156,10 @@ class CSVObject(object):
             for row in csv_reader:
                 keys = row.keys()
                 for key in keys:
+                    value = row[key]
+                    # Continue if field no value
+                    if len(str(value)) == 0:
+                        continue
                     # Valid Int Type
                     try:
                         if float(row[key]).is_integer():
@@ -201,12 +205,15 @@ class CSVObject(object):
                 keys = row.keys()
                 for key in keys:
                     value = row[key]
+                    if len(str(value)) == 0:
+                        row[key] = ''
+                        continue
                     int_status = int_type[key]
                     if int_status is True:
                         row[key] = int(float(value)) if int_type[key] is True else value
                     else:
                         row[key] = float(value) if float_type[key] is True else value
-                yield row
+                yield row, int_type, float_type
                 if has_header is False and i == 1:
                     for key in keys:
                         int_status = int_type[key]
@@ -214,7 +221,7 @@ class CSVObject(object):
                             row[key] = int(float(key)) if int_type[key] is True else key
                         else:
                             row[key] = float(key) if float_type[key] is True else key
-                    yield row
+                    yield row, int_type, float_type
                 i += 1
 
     def add_columns_to_csv(self,
