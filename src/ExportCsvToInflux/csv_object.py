@@ -35,7 +35,7 @@ class CSVObject(object):
             return headers
 
     @staticmethod
-    def search_files_in_dir(directory, match_suffix='.csv', filter_pattern='influx.csv'):
+    def search_files_in_dir(directory, match_suffix='.csv', filter_pattern='_influx.csv'):
         """Function: search_files_in_dir
 
         :param directory: the directory

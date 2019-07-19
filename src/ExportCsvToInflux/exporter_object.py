@@ -256,7 +256,7 @@ class ExporterObject(object):
 
             # Check the timestamp, and generate the csv with checksum
             csv_base_name = os.path.basename(csv_file_item)
-            new_csv_file = 'influx_{0}.csv'.format(csv_base_name)
+            new_csv_file = '{0}_influx.csv'.format(csv_base_name.replace('.csv', ''))
             new_csv_file = os.path.join(current_dir, new_csv_file)
             new_csv_file_exists = os.path.exists(new_csv_file)
             no_new_data_status = False
