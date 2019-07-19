@@ -268,14 +268,14 @@ class CSVObject(object):
             has_header = sniffer.has_header(f.read(40960))
             f.seek(0)
             source_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
-            new_headers = [x.keys()[0] for x in data]
+            new_headers = [list(x.keys())[0] for x in data]
             with open(target, 'w+') as target_file:
                 target_writer = csv.writer(target_file, delimiter=self.delimiter, lineterminator=self.lineterminator)
                 row_id = 0
                 for row in source_reader:
-                    values = row.values()
+                    values = list(row.values())
                     if row_id == 0:
-                        headers = row.keys()
+                        headers = list(row.keys())
                         if has_header is False:
                             continue
                         headers += new_headers
@@ -283,7 +283,7 @@ class CSVObject(object):
                     new_values = list()
                     for x in data:
                         try:
-                            value = x.values()[0][row_id]
+                            value = list(x.values())[0][row_id]
                         except IndexError:
                             print('Warning: The provided column length is less than with the source csv length. '
                                   'Use "null" to fill the empty data')
