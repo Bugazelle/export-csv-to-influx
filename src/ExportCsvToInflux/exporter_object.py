@@ -283,7 +283,7 @@ class ExporterObject(object):
             count = 0
             timestamp = 0
             convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(file_name=new_csv_file)
-            for row in convert_csv_data_to_int_float:
+            for row, int_type, float_type in convert_csv_data_to_int_float:
                 # Process Match & Filter: If match_columns exists and filter_columns not exists
                 match_status = self.__check_match_and_filter(row,
                                                              match_columns,
@@ -324,6 +324,14 @@ class ExporterObject(object):
                         if limit_string_length_columns:
                             if tag_column in limit_string_length_columns:
                                 v = str(v)[:limit_length + 1]
+                        # If field is empty
+                        if len(str(v)) == 0:
+                            if int_type[tag_column] is True:
+                                v = -999
+                            elif float_type[tag_column] is True:
+                                v = -999.0
+                            else:
+                                v = '-'
                     tags[tag_column] = v
 
                 # Process fields
@@ -335,6 +343,14 @@ class ExporterObject(object):
                         if limit_string_length_columns:
                             if field_column in limit_string_length_columns:
                                 v = str(v)[:limit_length + 1]
+                        # If field is empty
+                        if len(str(v)) == 0:
+                            if int_type[field_column] is True:
+                                v = -999
+                            elif float_type[field_column] is True:
+                                v = -999.9
+                            else:
+                                v = '-'
                     fields[field_column] = v
 
                 point = {'measurement': db_measurement, 'time': timestamp, 'fields': fields, 'tags': tags}
