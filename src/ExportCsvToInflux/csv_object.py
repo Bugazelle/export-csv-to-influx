@@ -44,8 +44,8 @@ class CSVObject(object):
         """
 
         base_object = BaseObject()
-        match_suffix = base_object.str_to_list(match_suffix)
-        filter_pattern = base_object.str_to_list(filter_pattern)
+        match_suffix = base_object.str_to_list(match_suffix, lower=True)
+        filter_pattern = base_object.str_to_list(filter_pattern, lower=True)
 
         # Is file
         is_file = os.path.isfile(directory)

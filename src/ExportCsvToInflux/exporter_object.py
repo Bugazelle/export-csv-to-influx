@@ -233,9 +233,11 @@ class ExporterObject(object):
             if not field_columns:
                 print('Error: The input --field_columns does not expected. '
                       'Please check the fields are in csv headers or not. Exporter stopping...')
+                continue
             if not tag_columns:
                 print('Error: The input --tag_columns does not expected. '
                       'Please check the fields are in csv headers or not. Exporter stopping...')
+                continue
             match_columns = self.__validate_columns(csv_headers, match_columns)
             filter_columns = self.__validate_columns(csv_headers, filter_columns)
 
@@ -253,7 +255,8 @@ class ExporterObject(object):
                     break
 
             # Check the timestamp, and generate the csv with checksum
-            new_csv_file = 'influx.csv'
+            csv_base_name = os.path.basename(csv_file_item)
+            new_csv_file = 'influx_{0}.csv'.format(csv_base_name)
             new_csv_file = os.path.join(current_dir, new_csv_file)
             new_csv_file_exists = os.path.exists(new_csv_file)
             no_new_data_status = False
