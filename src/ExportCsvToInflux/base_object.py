@@ -14,12 +14,17 @@ class BaseObject(object):
         """
 
         string_type = type(string)
-        if string_type is list or string_type is tuple:
+        list_tuple_type = string_type is list or string_type is tuple
+        try:
+            str_unicode_type = string_type is str or string_type is unicode
+        except NameError:
+            str_unicode_type = string_type is str
+        if list_tuple_type:
             if lower:
                 li = [str(item).strip(self.strip_chars).lower() for item in string]
             else:
                 li = [str(item).strip(self.strip_chars) for item in string]
-        elif string_type is str or string_type is unicode:
+        elif str_unicode_type:
             li = string.strip(self.strip_chars).split(delimiter)
             if lower:
                 li = [item.strip(self.strip_chars).lower() for item in li]
