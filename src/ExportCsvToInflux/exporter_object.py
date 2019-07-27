@@ -255,9 +255,8 @@ class ExporterObject(object):
                     break
 
             # Check the timestamp, and generate the csv with checksum
-            csv_base_name = os.path.basename(csv_file_item)
-            new_csv_file = '{0}_influx.csv'.format(csv_base_name.replace('.csv', ''))
-            new_csv_file = os.path.join(current_dir, new_csv_file)
+            # csv_base_name = os.path.basename(csv_file_item)
+            new_csv_file = '{0}_influx.csv'.format(csv_file_item.replace('.csv', ''))
             new_csv_file_exists = os.path.exists(new_csv_file)
             no_new_data_status = False
             if new_csv_file_exists:
@@ -275,6 +274,8 @@ class ExporterObject(object):
             data = [{'md5': [csv_file_md5] * csv_file_length}]
             if time_column_exists is False:
                 modified_time = csv_object.get_file_modify_time(csv_file_item)
+                field_columns.append('timestamp')
+                tag_columns.append('timestamp')
                 data.append({time_column: [modified_time] * csv_file_length})
             csv_object.add_columns_to_csv(file_name=csv_file_item, target=new_csv_file, data=data)
 
