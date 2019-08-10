@@ -199,7 +199,7 @@ class CSVObject(object):
 
             # Yield Data
             f.seek(0)
-            csv_reader = csv.DictReader(f)
+            csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
             i = 1
             for row in csv_reader:
                 keys = row.keys()
