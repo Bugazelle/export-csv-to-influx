@@ -110,13 +110,13 @@ class ExporterObject(object):
 
     def export_csv_to_influx(self,
                              csv_file,
-                             db_server_name,
-                             db_user,
-                             db_password,
                              db_name,
                              db_measurement,
                              tag_columns,
                              field_columns,
+                             db_server_name='localhost:8086',
+                             db_user='admin',
+                             db_password='admin',
                              time_column='timestamp',
                              time_format='%Y-%m-%d %H:%M:%S',
                              delimiter=',',
@@ -138,7 +138,7 @@ class ExporterObject(object):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
-        :param db_server_name: the influx server
+        :param db_server_name: the influx server (default localhost:8086)
         :param db_user: the influx db user
         :param db_password: the influx db password
         :param db_name: the influx db name
@@ -384,24 +384,24 @@ class ExporterObject(object):
                 print('Info: Wrote {0}, response: {1}'.format(data_points_len, response))
 
             # Write count measurement
-            fields = dict()
-            fields['total'] = csv_file_length
-            for k, v in self.match_count.items():
-                k = 'match_{0}'.format(k)
-                fields[k] = v
-            for k, v in self.filter_count.items():
-                k = 'filter_{0}'.format(k)
-                fields[k] = v
-            count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
             if enable_count_measurement:
+                fields = dict()
+                fields['total'] = csv_file_length
+                for k, v in self.match_count.items():
+                    k = 'match_{0}'.format(k)
+                    fields[k] = v
+                for k, v in self.filter_count.items():
+                    k = 'filter_{0}'.format(k)
+                    fields[k] = v
+                count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
                 response = client.write_points(count_point)
                 if response is False:
                     print('Error: Problem inserting points, exiting...')
                     exit(1)
                 print('Info: Wrote count measurement {0}, response: {1}'.format(count_point, response))
 
-            self.match_count = defaultdict(int)
-            self.filter_count = defaultdict(int)
+                self.match_count = defaultdict(int)
+                self.filter_count = defaultdict(int)
 
             print('Info: Done')
             print('')
