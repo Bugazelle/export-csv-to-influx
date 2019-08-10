@@ -27,10 +27,15 @@ class CSVObject(object):
 
         with open(file_name) as f:
             sniffer = csv.Sniffer()
-            has_header = sniffer.has_header(f.read(40960))
+            try:
+                has_header = sniffer.has_header(f.read(40960))
+            except csv.Error:
+                has_header = False
             f.seek(0)
             csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
-            headers = csv_reader.fieldnames if has_header else []
+            headers = csv_reader.fieldnames
+            is_header = not any(field.isdigit() for field in headers)
+            headers = headers if has_header or is_header else []
 
             return headers
 
@@ -125,11 +130,9 @@ class CSVObject(object):
         """
 
         self.valid_file_exit(file_name)
+        has_header = self.get_csv_header(file_name)
 
         with open(file_name) as f:
-            sniffer = csv.Sniffer()
-            has_header = sniffer.has_header(f.read(40960))
-            f.seek(0)
             csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
             count = 0 if has_header is True else 1
             for row in csv_reader:
@@ -144,11 +147,9 @@ class CSVObject(object):
         """
 
         self.valid_file_exit(file_name)
+        has_header = self.get_csv_header(file_name)
 
         with open(file_name) as f:
-            sniffer = csv.Sniffer()
-            has_header = sniffer.has_header(f.read(40960))
-            f.seek(0)
             csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
             int_type = defaultdict(list)
             float_type = defaultdict(list)
@@ -239,6 +240,7 @@ class CSVObject(object):
         """
 
         self.valid_file_exit(file_name)
+        has_header = self.get_csv_header(file_name)
 
         # Process data
         data_type = type(data)
@@ -264,9 +266,6 @@ class CSVObject(object):
 
         # Add columns
         with open(file_name) as f:
-            sniffer = csv.Sniffer()
-            has_header = sniffer.has_header(f.read(40960))
-            f.seek(0)
             source_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
             new_headers = [list(x.keys())[0] for x in data]
             with open(target, 'w+') as target_file:
