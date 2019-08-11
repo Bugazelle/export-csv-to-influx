@@ -129,7 +129,6 @@ class CSVObject(object):
 
         """
 
-        self.valid_file_exit(file_name)
         has_header = self.get_csv_header(file_name)
 
         with open(file_name) as f:
@@ -146,7 +145,6 @@ class CSVObject(object):
         :param file_name: the file name
         """
 
-        self.valid_file_exit(file_name)
         has_header = self.get_csv_header(file_name)
 
         with open(file_name) as f:
@@ -239,7 +237,6 @@ class CSVObject(object):
                          ]
         """
 
-        self.valid_file_exit(file_name)
         has_header = self.get_csv_header(file_name)
 
         # Process data

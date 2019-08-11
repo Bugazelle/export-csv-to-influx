@@ -1,3 +1,4 @@
+from pytz.exceptions import UnknownTimeZoneError
 from .influx_object import InfluxObject
 from collections import defaultdict
 from .base_object import BaseObject
@@ -101,6 +102,20 @@ class ExporterObject(object):
         return check_columns
 
     @staticmethod
+    def __validate_bool_string(target, alias=''):
+        """Private Function: Validate bool string
+
+        :param target: the target
+        """
+
+        target = str(target).lower()
+        expected = ['true', 'false']
+        if target not in expected:
+            raise Exception('Error: The input {0} should be True or False, current is {1}'.format(alias, target))
+
+        return True if target == 'true' else False
+
+    @staticmethod
     def __unix_time_millis(dt):
         """Private Function: unix_time_millis"""
 
@@ -139,20 +154,20 @@ class ExporterObject(object):
 
         :param csv_file: the csv file path/folder
         :param db_server_name: the influx server (default localhost:8086)
-        :param db_user: the influx db user
-        :param db_password: the influx db password
+        :param db_user: the influx db user (default admin)
+        :param db_password: the influx db password (default admin)
         :param db_name: the influx db name
         :param db_measurement: the measurement in a db
         :param time_column: the time columns (default timestamp)
-        :param tag_columns: the tag columns ()
+        :param tag_columns: the tag columns
         :param time_format: the time format (default %Y-%m-%d %H:%M:%S)
         :param field_columns: the filed columns
         :param delimiter: the csv delimiter (default comma)
         :param lineterminator: the csv line terminator (default comma)
         :param batch_size: how many rows insert every time (default 500)
         :param time_zone: the data time zone (default UTC)
-        :param limit_string_length_columns: limit the string length
-        :param limit_length: default 20
+        :param limit_string_length_columns: limit the string length columns (default None)
+        :param limit_length: limited length (default 20)
         :param drop_database: drop database (default False)
         :param drop_measurement: drop measurement (default False)
         :param match_columns: the columns need to be matched (default None)
@@ -161,7 +176,7 @@ class ExporterObject(object):
         :param filter_columns: the columns need to be filter (default None)
         :param filter_by_string: filter columns by string (default None)
         :param filter_by_regex: filter columns by regex (default None)
-        :param enable_count_measurement: create the measurement with only count info
+        :param enable_count_measurement: create the measurement with only count info (default False)
         :param force_insert_even_csv_no_update: force insert data to influx even csv data no update (default False)
         """
 
@@ -188,6 +203,10 @@ class ExporterObject(object):
         filter_by_string = base_object.str_to_list(filter_by_string)
         filter_by_regex = [] if str(filter_by_regex).lower() == 'none' else filter_by_regex
         filter_by_regex = base_object.str_to_list(filter_by_regex)
+        drop_database = self.__validate_bool_string(drop_database)
+        drop_measurement = self.__validate_bool_string(drop_measurement)
+        enable_count_measurement = self.__validate_bool_string(enable_count_measurement)
+        force_insert_even_csv_no_update = self.__validate_bool_string(force_insert_even_csv_no_update)
 
         # Init: database behavior
         drop_database = self.convert_boole(drop_database)
@@ -255,7 +274,6 @@ class ExporterObject(object):
                     break
 
             # Check the timestamp, and generate the csv with checksum
-            # csv_base_name = os.path.basename(csv_file_item)
             new_csv_file = '{0}_influx.csv'.format(csv_file_item.replace('.csv', ''))
             new_csv_file_exists = os.path.exists(new_csv_file)
             no_new_data_status = False
@@ -312,8 +330,14 @@ class ExporterObject(object):
                         continue
 
                 # Process Time
-                datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
-                datetime_local = timezone(time_zone).localize(datetime_naive)
+                try:
+                    datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
+                except ValueError as e:
+                    raise Exception('Error: {0}'.format(e))
+                try:
+                    datetime_local = timezone(time_zone).localize(datetime_naive)
+                except UnknownTimeZoneError:
+                    raise Exception('Error: Timezone {0} is unexpected'.format(time_zone))
                 timestamp = self.__unix_time_millis(datetime_local) * 1000000
 
                 # Process tags
