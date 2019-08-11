@@ -281,7 +281,10 @@ class ExporterObject(object):
                 with open(new_csv_file) as f:
                     csv_reader = csv.DictReader(f, delimiter=delimiter, lineterminator=lineterminator)
                     for row in csv_reader:
-                        new_csv_file_md5 = row['md5']
+                        try:
+                            new_csv_file_md5 = row['md5']
+                        except KeyError:
+                            break
                         if new_csv_file_md5 == csv_file_md5 and force_insert_even_csv_no_update is False:
                             print('Info: No new data found, existing...')
                             no_new_data_status = True
@@ -330,14 +333,8 @@ class ExporterObject(object):
                         continue
 
                 # Process Time
-                try:
-                    datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
-                except ValueError as e:
-                    raise Exception('Error: {0}'.format(e))
-                try:
-                    datetime_local = timezone(time_zone).localize(datetime_naive)
-                except UnknownTimeZoneError:
-                    raise Exception('Error: Timezone {0} is unexpected'.format(time_zone))
+                datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
+                datetime_local = timezone(time_zone).localize(datetime_naive)
                 timestamp = self.__unix_time_millis(datetime_local) * 1000000
 
                 # Process tags
