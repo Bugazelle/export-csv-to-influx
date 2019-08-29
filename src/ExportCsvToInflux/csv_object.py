@@ -156,12 +156,9 @@ class CSVObject(object):
                 keys = row.keys()
                 for key in keys:
                     value = row[key]
-                    # Continue if field no value
-                    if len(str(value)) == 0:
-                        continue
                     # Valid Int Type
                     try:
-                        if float(row[key]).is_integer():
+                        if float(value).is_integer():
                             int_type[key].append(True)
                         else:
                             int_type[key].append(False)
@@ -169,7 +166,7 @@ class CSVObject(object):
                         int_type[key].append(False)
                     # Valid Float Type
                     try:
-                        float(row[key])
+                        float(value)
                         float_type[key].append(True)
                     except ValueError:
                         float_type[key].append(False)
@@ -204,9 +201,6 @@ class CSVObject(object):
                 keys = row.keys()
                 for key in keys:
                     value = row[key]
-                    if len(str(value)) == 0:
-                        row[key] = ''
-                        continue
                     int_status = int_type[key]
                     if int_status is True:
                         row[key] = int(float(value)) if int_type[key] is True else value
