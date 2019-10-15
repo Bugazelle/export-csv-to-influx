@@ -1,4 +1,5 @@
 from pytz.exceptions import UnknownTimeZoneError
+from influxdb.exceptions import InfluxDBClientError
 from .influx_object import InfluxObject
 from collections import defaultdict
 from .base_object import BaseObject
@@ -19,18 +20,6 @@ class ExporterObject(object):
     def __init__(self):
         self.match_count = defaultdict(int)
         self.filter_count = defaultdict(int)
-
-    @staticmethod
-    def convert_boole(target):
-        target = str(target).lower()
-        if target != 'true' and target != 'false':
-            raise Exception('Error: The expected input for {0} should be: True or False'.format(target))
-        if target == 'true':
-            target = True
-        else:
-            target = False
-
-        return target
 
     def __check_match_and_filter(self,
                                  row,
@@ -111,7 +100,8 @@ class ExporterObject(object):
         target = str(target).lower()
         expected = ['true', 'false']
         if target not in expected:
-            raise Exception('Error: The input {0} should be True or False, current is {1}'.format(alias, target))
+            print('Error: The input {0} should be True or False, current is {1}'.format(alias, target))
+            sys.exit(1)
 
         return True if target == 'true' else False
 
@@ -186,6 +176,16 @@ class ExporterObject(object):
         base_object = BaseObject()
 
         # Init: Arguments
+        base_object.validate_str(csv_file)
+        base_object.validate_str(db_name)
+        base_object.validate_str(db_measurement)
+        base_object.validate_str(db_server_name)
+        base_object.validate_str(db_user)
+        base_object.validate_str(db_password)
+        base_object.validate_str(time_format)
+        base_object.validate_str(delimiter)
+        base_object.validate_str(lineterminator)
+        base_object.validate_str(time_zone)
         tag_columns = base_object.str_to_list(tag_columns)
         field_columns = base_object.str_to_list(field_columns)
         limit_string_length_columns = [] if str(limit_string_length_columns).lower() == 'none' \
@@ -209,10 +209,10 @@ class ExporterObject(object):
         force_insert_even_csv_no_update = self.__validate_bool_string(force_insert_even_csv_no_update)
 
         # Init: database behavior
-        drop_database = self.convert_boole(drop_database)
-        drop_measurement = self.convert_boole(drop_measurement)
-        enable_count_measurement = self.convert_boole(enable_count_measurement)
-        force_insert_even_csv_no_update = self.convert_boole(force_insert_even_csv_no_update)
+        drop_database = base_object.convert_boole(drop_database)
+        drop_measurement = base_object.convert_boole(drop_measurement)
+        enable_count_measurement = base_object.convert_boole(enable_count_measurement)
+        force_insert_even_csv_no_update = base_object.convert_boole(force_insert_even_csv_no_update)
         count_measurement = '{0}.count'.format(db_measurement)
         if drop_measurement:
             influx_object.drop_measurement(db_name, db_measurement)
@@ -226,15 +226,23 @@ class ExporterObject(object):
         try:
             batch_size = int(batch_size)
         except ValueError:
-            raise Exception('Error: The batch_size should be int, current is: {0}'.format(batch_size))
+            print('Error: The batch_size should be int, current is: {0}'.format(batch_size))
+            sys.exit(1)
+
+        # Init: limit_length
+        try:
+            limit_length = int(limit_length)
+        except ValueError:
+            print('Error: The limit_length should be int, current is: {0}'.format(limit_length))
+            sys.exit(1)
 
         # Process csv_file
         current_dir = os.path.curdir
         csv_file = os.path.join(current_dir, csv_file)
         csv_file_exists = os.path.exists(csv_file)
         if csv_file_exists is False:
-            print('Info: CSV file not found, exiting...')
-            sys.exit(0)
+            print('Error: CSV file not found, exiting...')
+            sys.exit(1)
         csv_file_generator = csv_object.search_files_in_dir(csv_file)
         for csv_file_item in csv_file_generator:
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
@@ -288,7 +296,7 @@ class ExporterObject(object):
                         if new_csv_file_md5 == csv_file_md5 and force_insert_even_csv_no_update is False:
                             print('Info: No new data found, existing...')
                             no_new_data_status = True
-                            # sys.exit(0)
+                            # sys.exit(1)
                         break
             if no_new_data_status:
                 continue
@@ -333,9 +341,12 @@ class ExporterObject(object):
                         continue
 
                 # Process Time
-                datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
-                datetime_local = timezone(time_zone).localize(datetime_naive)
-                timestamp = self.__unix_time_millis(datetime_local) * 1000000
+                if re.match('^\\d+$', str(row[time_column])):
+                    timestamp = int(row[time_column]) * 1000000
+                else:
+                    datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
+                    datetime_local = timezone(time_zone).localize(datetime_naive)
+                    timestamp = self.__unix_time_millis(datetime_local) * 1000000
 
                 # Process tags
                 tags = dict()
@@ -385,7 +396,13 @@ class ExporterObject(object):
                 if data_points_len % batch_size == 0:
                     print('Info: Read {0} lines from {1}'.format(count, csv_file_item))
                     print('Info: Inserting {0} data_points...'.format(data_points_len))
-                    response = client.write_points(data_points)
+                    try:
+                        response = client.write_points(data_points)
+                    except InfluxDBClientError as e:
+                        print('Error: System exited. Please double check the csv data. \n'
+                              '       It is not the same type as the current date type in influx. \n'
+                              '       {0}'.format(e))
+                        sys.exit(1)
                     if response is False:
                         print('Info: Problem inserting points, exiting...')
                         exit(1)
@@ -398,7 +415,13 @@ class ExporterObject(object):
             if data_points_len > 0:
                 print('Info: Read {0} lines from {1}'.format(count, csv_file_item))
                 print('Info: Inserting {0} data_points...'.format(data_points_len))
-                response = client.write_points(data_points)
+                try:
+                    response = client.write_points(data_points)
+                except InfluxDBClientError as e:
+                    print('Error: System exited. Please double check the csv data. \n'
+                          '       It is not the same type as the current date type in influx. \n'
+                          '       {0}'.format(e))
+                    sys.exit(1)
                 if response is False:
                     print('Error: Problem inserting points, exiting...')
                     exit(1)

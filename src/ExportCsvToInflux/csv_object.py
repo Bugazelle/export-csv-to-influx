@@ -5,6 +5,7 @@ import hashlib
 import time
 import json
 import csv
+import sys
 import os
 
 
@@ -84,7 +85,8 @@ class CSVObject(object):
 
         file_exists = os.path.exists(file_name)
         if file_exists is False:
-            raise Exception('Error: The file does not exist: {0}'.format(file_name))
+            print('Error: The file does not exist: {0}'.format(file_name))
+            sys.exit(1)
 
     def get_file_md5(self, file_name):
         """Function: get_file_md5
@@ -133,7 +135,7 @@ class CSVObject(object):
 
         with open(file_name) as f:
             csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
-            count = 0 if has_header is True else 1
+            count = 0 if has_header else 1
             for row in csv_reader:
                 count += 1
 
@@ -172,7 +174,7 @@ class CSVObject(object):
                         float_type[key].append(False)
 
             # Valid the key if no header
-            if keys and has_header is False:
+            if keys and not has_header:
                 for key in keys:
                     # Valid Int Type
                     try:
@@ -207,7 +209,7 @@ class CSVObject(object):
                     else:
                         row[key] = float(value) if float_type[key] is True else value
                 yield row, int_type, float_type
-                if has_header is False and i == 1:
+                if not has_header and i == 1:
                     for key in keys:
                         int_status = int_type[key]
                         if int_status is True:
@@ -243,7 +245,8 @@ class CSVObject(object):
         except NameError:
             check_data_type = data_type is not list and data_type is not str
         if check_data_type:
-            raise Exception(message)
+            print(message)
+            sys.exit(1)
 
         try:
             check_data_type = data_type is str or data_type is unicode
@@ -253,7 +256,8 @@ class CSVObject(object):
             try:
                 data = json.loads(data)
             except ValueError:
-                raise Exception(message)
+                print(message)
+                sys.exit(1)
 
         # Add columns
         with open(file_name) as f:
@@ -266,7 +270,7 @@ class CSVObject(object):
                     values = list(row.values())
                     if row_id == 0:
                         headers = list(row.keys())
-                        if has_header is False:
+                        if not has_header:
                             continue
                         headers += new_headers
                         target_writer.writerow(headers)
