@@ -100,8 +100,8 @@ class ExporterObject(object):
         target = str(target).lower()
         expected = ['true', 'false']
         if target not in expected:
-            print('Error: The input {0} should be True or False, current is {1}'.format(alias, target))
-            sys.exit(1)
+            error_message = 'Error: The input {0} should be True or False, current is {1}'.format(alias, target)
+            sys.exit(error_message)
 
         return True if target == 'true' else False
 
@@ -226,23 +226,23 @@ class ExporterObject(object):
         try:
             batch_size = int(batch_size)
         except ValueError:
-            print('Error: The batch_size should be int, current is: {0}'.format(batch_size))
-            sys.exit(1)
+            error_message = 'Error: The batch_size should be int, current is: {0}'.format(batch_size)
+            sys.exit(error_message)
 
         # Init: limit_length
         try:
             limit_length = int(limit_length)
         except ValueError:
-            print('Error: The limit_length should be int, current is: {0}'.format(limit_length))
-            sys.exit(1)
+            error_message = 'Error: The limit_length should be int, current is: {0}'.format(limit_length)
+            sys.exit(error_message)
 
         # Process csv_file
         current_dir = os.path.curdir
         csv_file = os.path.join(current_dir, csv_file)
         csv_file_exists = os.path.exists(csv_file)
         if csv_file_exists is False:
-            print('Error: CSV file not found, exiting...')
-            sys.exit(1)
+            error_message = 'Error: CSV file not found, exiting...'
+            sys.exit(error_message)
         csv_file_generator = csv_object.search_files_in_dir(csv_file)
         for csv_file_item in csv_file_generator:
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
@@ -294,9 +294,11 @@ class ExporterObject(object):
                         except KeyError:
                             break
                         if new_csv_file_md5 == csv_file_md5 and force_insert_even_csv_no_update is False:
-                            print('Info: No new data found, existing...')
+                            warning_message = 'Warning: No new data found, ' \
+                                              'exporter stop/jump for {0}...'.format(csv_file_item)
+                            print(warning_message)
                             no_new_data_status = True
-                            # sys.exit(1)
+                            # sys.exit(warning_message)
                         break
             if no_new_data_status:
                 continue
@@ -341,12 +343,20 @@ class ExporterObject(object):
                         continue
 
                 # Process Time
-                if re.match('^\\d+$', str(row[time_column])):
-                    timestamp = int(row[time_column]) * 1000000
-                else:
-                    datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
-                    datetime_local = timezone(time_zone).localize(datetime_naive)
-                    timestamp = self.__unix_time_millis(datetime_local) * 1000000
+                try:
+                    timestamp_float = float(row[time_column])
+                    timestamp_remove_decimal = int(str(timestamp_float).replace('.', ''))
+                    timestamp_influx = '{:<019d}'.format(timestamp_remove_decimal)
+                    timestamp = int(timestamp_influx)
+                except ValueError:
+                    try:
+                        datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
+                        datetime_local = timezone(time_zone).localize(datetime_naive)
+                        timestamp = self.__unix_time_millis(datetime_local) * 1000000
+                    except (TypeError, ValueError):
+                        error_message = 'Error: Unexpected time with format: {0}, {1}'.format(row[time_column],
+                                                                                              time_format)
+                        sys.exit(error_message)
 
                 # Process tags
                 tags = dict()
@@ -399,13 +409,13 @@ class ExporterObject(object):
                     try:
                         response = client.write_points(data_points)
                     except InfluxDBClientError as e:
-                        print('Error: System exited. Please double check the csv data. \n'
-                              '       It is not the same type as the current date type in influx. \n'
-                              '       {0}'.format(e))
-                        sys.exit(1)
+                        error_message = 'Error: System exited. Please double check the csv data. \n' \
+                                        '       It is not the same type as the current date type in influx. \n' \
+                                        '       {0}'.format(e)
+                        sys.exit(error_message)
                     if response is False:
-                        print('Info: Problem inserting points, exiting...')
-                        exit(1)
+                        error_message = 'Info: Problem inserting points, exiting...'
+                        sys.exit(error_message)
                     print('Info: Wrote {0} lines, response: {1}'.format(data_points_len, response))
 
                     data_points = list()
@@ -418,13 +428,13 @@ class ExporterObject(object):
                 try:
                     response = client.write_points(data_points)
                 except InfluxDBClientError as e:
-                    print('Error: System exited. Please double check the csv data. \n'
-                          '       It is not the same type as the current date type in influx. \n'
-                          '       {0}'.format(e))
-                    sys.exit(1)
+                    error_message = 'Error: System exited. Please double check the csv data. \n' \
+                                    '       It is not the same type as the current date type in influx. \n' \
+                                    '       {0}'.format(e)
+                    sys.exit(error_message)
                 if response is False:
-                    print('Error: Problem inserting points, exiting...')
-                    exit(1)
+                    error_message = 'Error: Problem inserting points, exiting...'
+                    sys.exit(error_message)
                 print('Info: Wrote {0}, response: {1}'.format(data_points_len, response))
 
             # Write count measurement
@@ -440,8 +450,8 @@ class ExporterObject(object):
                 count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
                 response = client.write_points(count_point)
                 if response is False:
-                    print('Error: Problem inserting points, exiting...')
-                    exit(1)
+                    error_message = 'Error: Problem inserting points, exiting...'
+                    sys.exit(error_message)
                 print('Info: Wrote count measurement {0}, response: {1}'.format(count_point, response))
 
                 self.match_count = defaultdict(int)
