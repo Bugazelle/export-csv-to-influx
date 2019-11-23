@@ -56,6 +56,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -fibr, --filter_by_regex, Filter by regex, separated by comma. Default: None.
 -ecm, --enable_count_measurement, Enable count measurement. Default: False.
 -fi, --force_insert_even_csv_no_update, Force insert data to influx, even csv no update. Default: False.
+-fsc, --force_string_columns, Force columns as string type, seperated as comma. Default: None
 ```
 
 > **Note 1:** You could use the library programmablly.

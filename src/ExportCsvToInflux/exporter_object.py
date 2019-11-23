@@ -139,7 +139,8 @@ class ExporterObject(object):
                              filter_by_string=None,
                              filter_by_regex=None,
                              enable_count_measurement=False,
-                             force_insert_even_csv_no_update=False):
+                             force_insert_even_csv_no_update=False,
+                             force_string_columns=None):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
@@ -168,6 +169,7 @@ class ExporterObject(object):
         :param filter_by_regex: filter columns by regex (default None)
         :param enable_count_measurement: create the measurement with only count info (default False)
         :param force_insert_even_csv_no_update: force insert data to influx even csv data no update (default False)
+        :param force_string_columns: force the columns as string (default None)
         """
 
         # Init: object
@@ -207,6 +209,8 @@ class ExporterObject(object):
         drop_measurement = self.__validate_bool_string(drop_measurement)
         enable_count_measurement = self.__validate_bool_string(enable_count_measurement)
         force_insert_even_csv_no_update = self.__validate_bool_string(force_insert_even_csv_no_update)
+        force_string_columns = [] if str(force_string_columns).lower() == 'none' else force_string_columns
+        force_string_columns = base_object.str_to_list(force_string_columns)
 
         # Init: database behavior
         drop_database = base_object.convert_boole(drop_database)
@@ -364,9 +368,10 @@ class ExporterObject(object):
                     v = 0
                     if tag_column in row:
                         v = row[tag_column]
-                        if limit_string_length_columns:
-                            if tag_column in limit_string_length_columns:
-                                v = str(v)[:limit_length + 1]
+                        if limit_string_length_columns and tag_column in limit_string_length_columns:
+                            v = str(v)[:limit_length + 1]
+                        if force_string_columns and tag_column in force_string_columns:
+                            v = str(v)
                         # If field is empty
                         if len(str(v)) == 0:
                             if int_type[tag_column] is True:
@@ -383,9 +388,11 @@ class ExporterObject(object):
                     v = 0
                     if field_column in row:
                         v = row[field_column]
-                        if limit_string_length_columns:
-                            if field_column in limit_string_length_columns:
-                                v = str(v)[:limit_length + 1]
+                        if limit_string_length_columns and field_column in limit_string_length_columns:
+                            v = str(v)[:limit_length + 1]
+                        if force_string_columns and field_column in force_string_columns:
+                            v = str(v)
+
                         # If field is empty
                         if len(str(v)) == 0:
                             if int_type[field_column] is True:
@@ -519,6 +526,8 @@ def export_csv_to_influx():
                         help='Enable count measurement. Default: False')
     parser.add_argument('-fi', '--force_insert_even_csv_no_update', nargs='?', default=False, const=False,
                         help='Force insert data to influx, even csv no update. Default: False')
+    parser.add_argument('-fsc', '--force_string_columns', nargs='?', default=None, const=None,
+                        help='Force columns as string type, separated by comma. Default: None.')
     parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args()
@@ -548,4 +557,5 @@ def export_csv_to_influx():
                                   filter_by_string=args.filter_by_string,
                                   filter_by_regex=args.filter_by_regex,
                                   enable_count_measurement=args.enable_count_measurement,
-                                  force_insert_even_csv_no_update=args.force_insert_even_csv_no_update)
+                                  force_insert_even_csv_no_update=args.force_insert_even_csv_no_update,
+                                  force_string_columns=args.force_string_columns)
