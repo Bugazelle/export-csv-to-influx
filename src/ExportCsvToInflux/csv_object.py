@@ -24,7 +24,7 @@ class CSVObject(object):
 
         """
 
-        self.valid_file_exit(file_name)
+        self.valid_file_exist(file_name)
 
         with open(file_name) as f:
             sniffer = csv.Sniffer()
@@ -77,16 +77,16 @@ class CSVObject(object):
                     yield y
 
     @staticmethod
-    def valid_file_exit(file_name):
-        """Function: valid_file_exit
+    def valid_file_exist(file_name):
+        """Function: valid_file_exist
 
         :param file_name: the file name
         """
 
         file_exists = os.path.exists(file_name)
         if file_exists is False:
-            print('Error: The file does not exist: {0}'.format(file_name))
-            sys.exit(1)
+            error_message = 'Error: The file does not exist: {0}'.format(file_name)
+            sys.exit(error_message)
 
     def get_file_md5(self, file_name):
         """Function: get_file_md5
@@ -95,7 +95,7 @@ class CSVObject(object):
         :return return the file md5
         """
 
-        self.valid_file_exit(file_name)
+        self.valid_file_exist(file_name)
 
         hash_md5 = hashlib.md5()
         with open(file_name, "rb") as f:
@@ -112,7 +112,7 @@ class CSVObject(object):
         :return return the human readable time
         """
 
-        self.valid_file_exit(file_name)
+        self.valid_file_exist(file_name)
 
         modified = os.path.getmtime(file_name)
         modified_s, modified_ms = divmod(modified * 1000, 1000)
@@ -237,16 +237,15 @@ class CSVObject(object):
 
         # Process data
         data_type = type(data)
-        message = 'Error: The data should be list type, the item should be dict. Or the json type as following' \
-                  'for example: [{"new_header_1": ["new_value_1", "new_value_2", "new_value_3"]}, ' \
-                  '{"new_header_2": ["new_value_1", "new_value_2", "new_value_3"]}]'
+        error_message = 'Error: The data should be list type, the item should be dict. Or the json type as following ' \
+                        'for example: [{"new_header_1": ["new_value_1", "new_value_2", "new_value_3"]}, ' \
+                        '{"new_header_2": ["new_value_1", "new_value_2", "new_value_3"]}]'
         try:
             check_data_type = data_type is not list and data_type is not str and data_type is not unicode
         except NameError:
             check_data_type = data_type is not list and data_type is not str
         if check_data_type:
-            print(message)
-            sys.exit(1)
+            sys.exit(error_message)
 
         try:
             check_data_type = data_type is str or data_type is unicode
@@ -256,8 +255,7 @@ class CSVObject(object):
             try:
                 data = json.loads(data)
             except ValueError:
-                print(message)
-                sys.exit(1)
+                sys.exit(error_message)
 
         # Add columns
         with open(file_name) as f:

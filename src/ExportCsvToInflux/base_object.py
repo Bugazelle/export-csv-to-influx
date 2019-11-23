@@ -1,5 +1,6 @@
 import sys
 
+
 class BaseObject(object):
     """BaseObject"""
 
@@ -10,8 +11,8 @@ class BaseObject(object):
     def convert_boole(target):
         target = str(target).lower()
         if target != 'true' and target != 'false':
-            print('Error: The expected input for {0} should be: True or False'.format(target))
-            exit(1)
+            error_message = 'Error: The expected input for {0} should be: True or False'.format(target)
+            sys.exit(error_message)
         if target == 'true':
             target = True
         else:
@@ -33,8 +34,8 @@ class BaseObject(object):
         except NameError:
             string_type = get_type is str
         if not string_type and ignore_exception is False:
-            print('Error: The {0} is not string type. Please check.'.format(target))
-            sys.exit(1)
+            error_message = 'Error: The {0} is not string type. Please check.'.format(target)
+            sys.exit(error_message)
 
         return string_type
 
@@ -55,8 +56,7 @@ class BaseObject(object):
         try:
             bool(string)
         except ValueError:
-            print(error_message)
-            sys.exit(1)
+            sys.exit(error_message)
 
         # Process the type
         list_tuple_type = get_type is list or get_type is tuple
@@ -75,6 +75,5 @@ class BaseObject(object):
         elif not string:
             li = list()
         else:
-            print(error_message)
-            sys.exit(1)
+            sys.exit(error_message)
         return li

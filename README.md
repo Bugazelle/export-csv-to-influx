@@ -38,7 +38,8 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -p, --password, InfluxDB Password. Default: admin
 -db, --dbname, InfluxDB Database name. **Mandatory**
 -m, --measurement, Measurement name. **Mandatory**
--t, --time_column, Timestamp column name. Default: timestamp. If no timestamp column, the timestamp is set to the last file modify time for whole csv rows.
+-t, --time_column, Timestamp column name. Default column name: timestamp. If no timestamp column, the timestamp is set to the last file modify time for whole csv rows.
+    > Note: Also support the pure timestamp, like: 1517587275. Auto detected.
 -tf, --time_format, Timestamp format. Default: '%Y-%m-%d %H:%M:%S' e.g.: 1970-01-01 00:00:00.
 -tz, --time_zone, Timezone of supplied data. Default: UTC.
 -fc, --field_columns, List of csv columns to use as fields, separated by comma. **Mandatory**
@@ -56,6 +57,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -fibr, --filter_by_regex, Filter by regex, separated by comma. Default: None.
 -ecm, --enable_count_measurement, Enable count measurement. Default: False.
 -fi, --force_insert_even_csv_no_update, Force insert data to influx, even csv no update. Default: False.
+-fsc, --force_string_columns, Force columns as string type, seperated as comma. Default: None
 ```
 
 > **Note 1:** You could use the library programmablly.

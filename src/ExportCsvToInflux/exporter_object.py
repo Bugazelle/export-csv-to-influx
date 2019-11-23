@@ -100,8 +100,8 @@ class ExporterObject(object):
         target = str(target).lower()
         expected = ['true', 'false']
         if target not in expected:
-            print('Error: The input {0} should be True or False, current is {1}'.format(alias, target))
-            sys.exit(1)
+            error_message = 'Error: The input {0} should be True or False, current is {1}'.format(alias, target)
+            sys.exit(error_message)
 
         return True if target == 'true' else False
 
@@ -139,7 +139,8 @@ class ExporterObject(object):
                              filter_by_string=None,
                              filter_by_regex=None,
                              enable_count_measurement=False,
-                             force_insert_even_csv_no_update=False):
+                             force_insert_even_csv_no_update=False,
+                             force_string_columns=None):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
@@ -168,6 +169,7 @@ class ExporterObject(object):
         :param filter_by_regex: filter columns by regex (default None)
         :param enable_count_measurement: create the measurement with only count info (default False)
         :param force_insert_even_csv_no_update: force insert data to influx even csv data no update (default False)
+        :param force_string_columns: force the columns as string (default None)
         """
 
         # Init: object
@@ -207,6 +209,8 @@ class ExporterObject(object):
         drop_measurement = self.__validate_bool_string(drop_measurement)
         enable_count_measurement = self.__validate_bool_string(enable_count_measurement)
         force_insert_even_csv_no_update = self.__validate_bool_string(force_insert_even_csv_no_update)
+        force_string_columns = [] if str(force_string_columns).lower() == 'none' else force_string_columns
+        force_string_columns = base_object.str_to_list(force_string_columns)
 
         # Init: database behavior
         drop_database = base_object.convert_boole(drop_database)
@@ -226,23 +230,23 @@ class ExporterObject(object):
         try:
             batch_size = int(batch_size)
         except ValueError:
-            print('Error: The batch_size should be int, current is: {0}'.format(batch_size))
-            sys.exit(1)
+            error_message = 'Error: The batch_size should be int, current is: {0}'.format(batch_size)
+            sys.exit(error_message)
 
         # Init: limit_length
         try:
             limit_length = int(limit_length)
         except ValueError:
-            print('Error: The limit_length should be int, current is: {0}'.format(limit_length))
-            sys.exit(1)
+            error_message = 'Error: The limit_length should be int, current is: {0}'.format(limit_length)
+            sys.exit(error_message)
 
         # Process csv_file
         current_dir = os.path.curdir
         csv_file = os.path.join(current_dir, csv_file)
         csv_file_exists = os.path.exists(csv_file)
         if csv_file_exists is False:
-            print('Error: CSV file not found, exiting...')
-            sys.exit(1)
+            error_message = 'Error: CSV file not found, exiting...'
+            sys.exit(error_message)
         csv_file_generator = csv_object.search_files_in_dir(csv_file)
         for csv_file_item in csv_file_generator:
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
@@ -294,9 +298,11 @@ class ExporterObject(object):
                         except KeyError:
                             break
                         if new_csv_file_md5 == csv_file_md5 and force_insert_even_csv_no_update is False:
-                            print('Info: No new data found, existing...')
+                            warning_message = 'Warning: No new data found, ' \
+                                              'exporter stop/jump for {0}...'.format(csv_file_item)
+                            print(warning_message)
                             no_new_data_status = True
-                            # sys.exit(1)
+                            # sys.exit(warning_message)
                         break
             if no_new_data_status:
                 continue
@@ -341,12 +347,20 @@ class ExporterObject(object):
                         continue
 
                 # Process Time
-                if re.match('^\\d+$', str(row[time_column])):
-                    timestamp = int(row[time_column]) * 1000000
-                else:
-                    datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
-                    datetime_local = timezone(time_zone).localize(datetime_naive)
-                    timestamp = self.__unix_time_millis(datetime_local) * 1000000
+                try:
+                    timestamp_float = float(row[time_column])
+                    timestamp_remove_decimal = int(str(timestamp_float).replace('.', ''))
+                    timestamp_influx = '{:<019d}'.format(timestamp_remove_decimal)
+                    timestamp = int(timestamp_influx)
+                except ValueError:
+                    try:
+                        datetime_naive = datetime.datetime.strptime(row[time_column], time_format)
+                        datetime_local = timezone(time_zone).localize(datetime_naive)
+                        timestamp = self.__unix_time_millis(datetime_local) * 1000000
+                    except (TypeError, ValueError):
+                        error_message = 'Error: Unexpected time with format: {0}, {1}'.format(row[time_column],
+                                                                                              time_format)
+                        sys.exit(error_message)
 
                 # Process tags
                 tags = dict()
@@ -354,9 +368,10 @@ class ExporterObject(object):
                     v = 0
                     if tag_column in row:
                         v = row[tag_column]
-                        if limit_string_length_columns:
-                            if tag_column in limit_string_length_columns:
-                                v = str(v)[:limit_length + 1]
+                        if limit_string_length_columns and tag_column in limit_string_length_columns:
+                            v = str(v)[:limit_length + 1]
+                        if force_string_columns and tag_column in force_string_columns:
+                            v = str(v)
                         # If field is empty
                         if len(str(v)) == 0:
                             if int_type[tag_column] is True:
@@ -373,9 +388,11 @@ class ExporterObject(object):
                     v = 0
                     if field_column in row:
                         v = row[field_column]
-                        if limit_string_length_columns:
-                            if field_column in limit_string_length_columns:
-                                v = str(v)[:limit_length + 1]
+                        if limit_string_length_columns and field_column in limit_string_length_columns:
+                            v = str(v)[:limit_length + 1]
+                        if force_string_columns and field_column in force_string_columns:
+                            v = str(v)
+
                         # If field is empty
                         if len(str(v)) == 0:
                             if int_type[field_column] is True:
@@ -399,13 +416,13 @@ class ExporterObject(object):
                     try:
                         response = client.write_points(data_points)
                     except InfluxDBClientError as e:
-                        print('Error: System exited. Please double check the csv data. \n'
-                              '       It is not the same type as the current date type in influx. \n'
-                              '       {0}'.format(e))
-                        sys.exit(1)
+                        error_message = 'Error: System exited. Please double check the csv data. \n' \
+                                        '       It is not the same type as the current date type in influx. \n' \
+                                        '       {0}'.format(e)
+                        sys.exit(error_message)
                     if response is False:
-                        print('Info: Problem inserting points, exiting...')
-                        exit(1)
+                        error_message = 'Info: Problem inserting points, exiting...'
+                        sys.exit(error_message)
                     print('Info: Wrote {0} lines, response: {1}'.format(data_points_len, response))
 
                     data_points = list()
@@ -418,13 +435,13 @@ class ExporterObject(object):
                 try:
                     response = client.write_points(data_points)
                 except InfluxDBClientError as e:
-                    print('Error: System exited. Please double check the csv data. \n'
-                          '       It is not the same type as the current date type in influx. \n'
-                          '       {0}'.format(e))
-                    sys.exit(1)
+                    error_message = 'Error: System exited. Please double check the csv data. \n' \
+                                    '       It is not the same type as the current date type in influx. \n' \
+                                    '       {0}'.format(e)
+                    sys.exit(error_message)
                 if response is False:
-                    print('Error: Problem inserting points, exiting...')
-                    exit(1)
+                    error_message = 'Error: Problem inserting points, exiting...'
+                    sys.exit(error_message)
                 print('Info: Wrote {0}, response: {1}'.format(data_points_len, response))
 
             # Write count measurement
@@ -440,8 +457,8 @@ class ExporterObject(object):
                 count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
                 response = client.write_points(count_point)
                 if response is False:
-                    print('Error: Problem inserting points, exiting...')
-                    exit(1)
+                    error_message = 'Error: Problem inserting points, exiting...'
+                    sys.exit(error_message)
                 print('Info: Wrote count measurement {0}, response: {1}'.format(count_point, response))
 
                 self.match_count = defaultdict(int)
@@ -483,7 +500,7 @@ def export_csv_to_influx():
                         help='List of csv columns to use as tags, separated by comma')
     parser.add_argument('-b', '--batch_size', nargs='?', default=500, const=500,
                         help='Batch size when inserting data to influx. Default: 500.')
-    parser.add_argument('-lslc', '--limit_string_length_columns',nargs='?',  default=None, const=None,
+    parser.add_argument('-lslc', '--limit_string_length_columns', nargs='?',  default=None, const=None,
                         help='Limit string length columns, separated by comma. Default: None.')
     parser.add_argument('-ls', '--limit_length', nargs='?', default=20, const=20,
                         help='Limit length. Default: 20.')
@@ -509,6 +526,8 @@ def export_csv_to_influx():
                         help='Enable count measurement. Default: False')
     parser.add_argument('-fi', '--force_insert_even_csv_no_update', nargs='?', default=False, const=False,
                         help='Force insert data to influx, even csv no update. Default: False')
+    parser.add_argument('-fsc', '--force_string_columns', nargs='?', default=None, const=None,
+                        help='Force columns as string type, separated by comma. Default: None.')
     parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args()
@@ -538,4 +557,5 @@ def export_csv_to_influx():
                                   filter_by_string=args.filter_by_string,
                                   filter_by_regex=args.filter_by_regex,
                                   enable_count_measurement=args.enable_count_measurement,
-                                  force_insert_even_csv_no_update=args.force_insert_even_csv_no_update)
+                                  force_insert_even_csv_no_update=args.force_insert_even_csv_no_update,
+                                  force_string_columns=args.force_string_columns)
