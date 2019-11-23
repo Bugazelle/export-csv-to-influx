@@ -500,7 +500,7 @@ def export_csv_to_influx():
                         help='List of csv columns to use as tags, separated by comma')
     parser.add_argument('-b', '--batch_size', nargs='?', default=500, const=500,
                         help='Batch size when inserting data to influx. Default: 500.')
-    parser.add_argument('-lslc', '--limit_string_length_columns',nargs='?',  default=None, const=None,
+    parser.add_argument('-lslc', '--limit_string_length_columns', nargs='?',  default=None, const=None,
                         help='Limit string length columns, separated by comma. Default: None.')
     parser.add_argument('-ls', '--limit_length', nargs='?', default=20, const=20,
                         help='Limit length. Default: 20.')
