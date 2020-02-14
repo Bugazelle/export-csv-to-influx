@@ -43,7 +43,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -tf, --time_format, Timestamp format. Default: '%Y-%m-%d %H:%M:%S' e.g.: 1970-01-01 00:00:00.
 -tz, --time_zone, Timezone of supplied data. Default: UTC.
 -fc, --field_columns, List of csv columns to use as fields, separated by comma. **Mandatory**
--tc, --tag_columns, List of csv columns to use as tags, separated by comma. **Mandatory**
+-tc, --tag_columns, List of csv columns to use as tags, separated by comma. Default: None
 -b, --batch_size, Batch size when inserting data to influx. Default: 500.
 -lslc, --limit_string_length_columns, Limit string length column, separated by comma. Default: None.
 -ls, --limit_length, Limit length. Default: 20.
