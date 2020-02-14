@@ -117,8 +117,8 @@ class ExporterObject(object):
                              csv_file,
                              db_name,
                              db_measurement,
-                             tag_columns,
                              field_columns,
+                             tag_columns=None,
                              db_server_name='localhost:8086',
                              db_user='admin',
                              db_password='admin',
@@ -266,9 +266,9 @@ class ExporterObject(object):
                       'Please check the fields are in csv headers or not. Exporter stopping...')
                 continue
             if not tag_columns:
-                print('Error: The input --tag_columns does not expected. '
-                      'Please check the fields are in csv headers or not. Exporter stopping...')
-                continue
+                print('Warning: The input --tag_columns does not expected or leaves None. '
+                      'Please check the fields are in csv headers or not. Continue checking...')
+                # continue
             match_columns = self.__validate_columns(csv_headers, match_columns)
             filter_columns = self.__validate_columns(csv_headers, filter_columns)
 
@@ -496,8 +496,8 @@ def export_csv_to_influx():
                         help='Timezone of supplied data. Default: UTC')
     parser.add_argument('-fc', '--field_columns', required=True,
                         help='List of csv columns to use as fields, separated by comma')
-    parser.add_argument('-tc', '--tag_columns', required=True,
-                        help='List of csv columns to use as tags, separated by comma')
+    parser.add_argument('-tc', '--tag_columns', nargs='?', default=None, const=None,
+                        help='List of csv columns to use as tags, separated by comma. Default: None')
     parser.add_argument('-b', '--batch_size', nargs='?', default=500, const=500,
                         help='Batch size when inserting data to influx. Default: 500.')
     parser.add_argument('-lslc', '--limit_string_length_columns', nargs='?',  default=None, const=None,
