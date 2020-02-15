@@ -82,6 +82,8 @@ class ExporterObject(object):
         """Private Function: validate_columns """
 
         if check_columns:
+            if len(check_columns) == 1 and check_columns[0] == '*':
+                return csv_headers
             validate_check_columns = all(check_column in csv_headers for check_column in check_columns)
             if validate_check_columns is False:
                 print('Warning: Not all columns {0} in csv headers {1}. '
@@ -150,7 +152,7 @@ class ExporterObject(object):
         :param db_name: the influx db name
         :param db_measurement: the measurement in a db
         :param time_column: the time columns (default timestamp)
-        :param tag_columns: the tag columns
+        :param tag_columns: the tag columns (default None)
         :param time_format: the time format (default %Y-%m-%d %H:%M:%S)
         :param field_columns: the filed columns
         :param delimiter: the csv delimiter (default comma)
