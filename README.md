@@ -60,16 +60,23 @@ You could use `export_csv_to_influx -h` to see the help guide.
 -fsc, --force_string_columns, Force columns as string type, seperated as comma. Default: None
 ```
 
-> **Note 1:** You could use the library programmablly.
+> **Note:** 
+> 1. You could pass `*` to --field_columns to match all the fields: `--field_columns=*`, `--field_columns '*'`
+> 2. CSV data won't insert into influx again if no update. Use to force insert: `--force_insert_even_csv_no_update=True`, `--force_insert_even_csv_no_update True`
 
-  ```
-  from ExportCsvToInflux import ExporterObject
-  
-  exporter = ExporterObject()
-  exporter.export_csv_to_influx(...)
-  ```
+## Programmatically
 
-> **Note 2:** CSV data won't insert into influx again if no update. Use --force_insert_even_csv_no_update=True to force insert
+Also, we could run the exporter programmatically.
+
+```
+from ExportCsvToInflux import ExporterObject
+
+exporter = ExporterObject()
+exporter.export_csv_to_influx(...)
+
+# You could get the export_csv_to_influx parameter details by:
+print(exporter.export_csv_to_influx.__doc__)
+```
 
 ## Sample
 

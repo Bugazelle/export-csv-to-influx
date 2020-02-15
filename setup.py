@@ -13,7 +13,7 @@ with open(os.path.join(CURDIR, 'src', 'ExportCsvToInflux', '__version__.py')) as
 def readme():
     with open('README.md') as f:
         long_description = f.read()
-        index = long_description.find('```\n\n> **Note 1:**')
+        index = long_description.find('```\n\n> **Note:**')
         long_description = long_description[:index]
         long_description = long_description.replace('## Install', '**Install**')
         long_description = long_description.replace('## Features', '**Features**')
