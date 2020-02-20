@@ -314,13 +314,16 @@ class ExporterObject(object):
                 field_columns.append('timestamp')
                 tag_columns.append('timestamp')
                 data.append({time_column: [modified_time] * csv_file_length})
-            csv_object.add_columns_to_csv(file_name=csv_file_item, target=new_csv_file, data=data)
+            csv_reader_data = csv_object.add_columns_to_csv(file_name=csv_file_item,
+                                                            target=new_csv_file,
+                                                            data=data,
+                                                            save_csv_file=not force_insert_even_csv_no_update)
 
-            # Open influx csv
+            # Process influx csv
             data_points = list()
             count = 0
             timestamp = 0
-            convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(file_name=new_csv_file)
+            convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(csv_reader=csv_reader_data)
             for row, int_type, float_type in convert_csv_data_to_int_float:
                 # Process Match & Filter: If match_columns exists and filter_columns not exists
                 match_status = self.__check_match_and_filter(row,
@@ -418,8 +421,9 @@ class ExporterObject(object):
                     try:
                         response = client.write_points(data_points)
                     except InfluxDBClientError as e:
-                        error_message = 'Error: System exited. Please double check the csv data. \n' \
-                                        '       It is not the same type as the current date type in influx. \n' \
+                        error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
+                                        '       Please double check the csv data. \n' \
+                                        '       If would like to force data to str, use: --force_string_columns \n' \
                                         '       {0}'.format(e)
                         sys.exit(error_message)
                     if response is False:
@@ -437,8 +441,9 @@ class ExporterObject(object):
                 try:
                     response = client.write_points(data_points)
                 except InfluxDBClientError as e:
-                    error_message = 'Error: System exited. Please double check the csv data. \n' \
-                                    '       It is not the same type as the current date type in influx. \n' \
+                    error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
+                                    '       Please double check the csv data. \n' \
+                                    '       If would like to force data to str, use: --force_string_columns \n' \
                                     '       {0}'.format(e)
                     sys.exit(error_message)
                 if response is False:
