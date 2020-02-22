@@ -15,7 +15,7 @@ pip install ExportCsvToInflux
 
 1. **[Highlight :star2::tada::heart_eyes:]** Allow to use binary **export_csv_to_influx** to run exporter
 2. **[Highlight :star2::tada::heart_eyes:]** Allow to check dozens of csv files in a folder
-3. **[Highlight :star2::tada::heart_eyes:]** Auto convert csv data to int/float/string in Influx
+3. **[Highlight :star2::tada::heart_eyes::confetti_ball::sun_with_face::balloon:]** Auto convert csv data to int/float/string in Influx
 4. **[Highlight :star2::tada::heart_eyes:]** Allow to match or filter the data by using string or regex.
 5. **[Highlight :star2::tada::heart_eyes:]** Allow to count, and generate count measurement
 6. Allow to limit string length in Influx
