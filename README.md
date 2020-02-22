@@ -13,11 +13,11 @@ pip install ExportCsvToInflux
 
 ## Features
 
-1. [Highlight - :heart_eyes:] Allow to use binary **export_csv_to_influx** to run exporter
-2. [Highlight - :heart_eyes:] Allow to check dozens of csv files in a folder
-3. [Highlight - :heart_eyes:] Auto convert csv data to int/float/string in Influx
-4. [Highlight - :heart_eyes:] Allow to match or filter the data by using string or regex.
-5. [Highlight - :heart_eyes:] Allow to count, and generate count measurement
+1. **[Highlight :star2::tada::heart_eyes:]** Allow to use binary **export_csv_to_influx** to run exporter
+2. **[Highlight :star2::tada::heart_eyes:]** Allow to check dozens of csv files in a folder
+3. **[Highlight :star2::tada::heart_eyes:]** Auto convert csv data to int/float/string in Influx
+4. **[Highlight :star2::tada::heart_eyes:]** Allow to match or filter the data by using string or regex.
+5. **[Highlight :star2::tada::heart_eyes:]** Allow to count, and generate count measurement
 6. Allow to limit string length in Influx
 7. Allow to judge the csv has new data or not
 8. Allow to use the latest file modify time as time column
