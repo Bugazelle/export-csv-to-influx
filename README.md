@@ -13,17 +13,17 @@ pip install ExportCsvToInflux
 
 ## Features
 
-1. Allow to use binary **export_csv_to_influx** to run exporter
-2. Allow to check dozens of csv files in a folder
-3. Auto convert csv data to int/float/string in Influx
-4. Allow to limit string length in Influx
-5. Allow to judge the csv has new data or not
-6. Allow to use the latest file modify time as time column
-7. Auto Create database if not exist
-8. Allow to drop database before inserting data
-9. Allow to drop measurements before inserting data
-10. Allow to match or filter the data by using string or regex.
-11. Allow to count, and generate count measurement
+1. **[Highlight :star2::tada::heart_eyes:]** Allow to use binary **export_csv_to_influx** to run exporter
+2. **[Highlight :star2::tada::heart_eyes:]** Allow to check dozens of csv files in a folder
+3. **[Highlight :star2::tada::heart_eyes::confetti_ball::four_leaf_clover::balloon:]** Auto convert csv data to int/float/string in Influx
+4. **[Highlight :star2::tada::heart_eyes:]** Allow to match or filter the data by using string or regex.
+5. **[Highlight :star2::tada::heart_eyes:]** Allow to count, and generate count measurement
+6. Allow to limit string length in Influx
+7. Allow to judge the csv has new data or not
+8. Allow to use the latest file modify time as time column
+9. Auto Create database if not exist
+10. Allow to drop database before inserting data
+11. Allow to drop measurements before inserting data
 
 ## Command Arguments
 
