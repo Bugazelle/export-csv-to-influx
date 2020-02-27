@@ -29,38 +29,38 @@ pip install ExportCsvToInflux
 
 You could use `export_csv_to_influx -h` to see the help guide.
 
-1. **-c, --csv**: Input CSV file path, or the folder path. **Mandatory**
-2. **-db, --dbname**: InfluxDB Database name. **Mandatory**
-3. **-m, --measurement**: Measurement name. **Mandatory**
-4. **-fc, --field_columns**: List of csv columns to use as fields, separated by comma. **Mandatory**
-5. **-d, --delimiter**: CSV delimiter. Default: ','. 
-6. **-lt, --lineterminator**: CSV lineterminator. Default: '\n'. 
-7. **-s, --server**: InfluxDB Server address. Default: localhost:8086.
-8. **-u, --user**: InfluxDB User name. Default: admin
-9. **-p, --password**: InfluxDB Password. Default: admin
-10. **-t, --time_column**: Timestamp column name. Default column name: timestamp. 
+1. `-c, --csv`: Input CSV file path, or the folder path. `Mandatory`
+2. `-db, --dbname`: InfluxDB Database name. `Mandatory`
+3. `-m, --measurement`: Measurement name. `Mandatory`
+4. `-fc, --field_columns`: List of csv columns to use as fields, separated by comma. `Mandatory`
+5. `-d, --delimiter`: CSV delimiter. Default: ','. 
+6. `-lt, --lineterminator`: CSV lineterminator. Default: '\n'. 
+7. `-s, --server`: InfluxDB Server address. Default: localhost:8086.
+8. `-u, --user`: InfluxDB User name. Default: admin
+9. `-p, --password`: InfluxDB Password. Default: admin
+10. `-t, --time_column`: Timestamp column name. Default column name: timestamp. 
     
     If no timestamp column, the timestamp is set to the last file modify time for whole csv rows.
     
     > Note: Also support the pure timestamp, like: 1517587275. Auto detected.
     
-11. **-tf, --time_format**: Timestamp format. Default: '%Y-%m-%d %H:%M:%S' e.g.: 1970-01-01 00:00:00.
-12. **-tz, --time_zone**: Timezone of supplied data. Default: UTC.
-13. **-tc, --tag_columns**: List of csv columns to use as tags, separated by comma. Default: None
-14. **-b, --batch_size**: Batch size when inserting data to influx. Default: 500.
-15. **-lslc, --limit_string_length_columns**: Limit string length column, separated by comma. Default: None.
-16. **-ls, --limit_length**: Limit length. Default: 20.
-17. **-dd, --drop_database**: Drop database before inserting data. Default: False.
-18. **-dm, --drop_measurement**: Drop measurement before inserting data. Default: False.
-19. **-mc, --match_columns**: Match the data you want to get for certain columns, separated by comma. Match Rule: All matches, then match. Default: None.
-20. **-mbs, --match_by_string**: Match by string, separated by comma. Default: None.
-21. **-mbr, --match_by_regex**: Match by regex, separated by comma. Default: None.
-22. **-fic, --filter_columns**: Filter the data you want to filter for certain columns, separated by comma. Filter Rule: Any one filter success, the filter. Default: None.
-23. **-fibs, --filter_by_string**: Filter by string, separated by comma. Default: None.
-24. **-fibr, --filter_by_regex**: Filter by regex, separated by comma. Default: None.
-25. **-ecm, --enable_count_measurement**: Enable count measurement. Default: False.
-26. **-fi, --force_insert_even_csv_no_update**: Force insert data to influx, even csv no update. Default: False.
-27. **-fsc, --force_string_columns**: Force columns as string type, seperated as comma. Default: None
+11. `-tf, --time_format`: Timestamp format. Default: '%Y-%m-%d %H:%M:%S' e.g.: 1970-01-01 00:00:00.
+12. `-tz, --time_zone`: Timezone of supplied data. Default: UTC.
+13. `-tc, --tag_columns`: List of csv columns to use as tags, separated by comma. Default: None
+14. `-b, --batch_size`: Batch size when inserting data to influx. Default: 500.
+15. `-lslc, --limit_string_length_columns`: Limit string length column, separated by comma. Default: None.
+16. `-ls, --limit_length`: Limit length. Default: 20.
+17. `-dd, --drop_database`: Drop database before inserting data. Default: False.
+18. `-dm, --drop_measurement`: Drop measurement before inserting data. Default: False.
+19. `-mc, --match_columns`: Match the data you want to get for certain columns, separated by comma. Match Rule: All matches, then match. Default: None.
+20. `-mbs, --match_by_string`: Match by string, separated by comma. Default: None.
+21. `-mbr, --match_by_regex`: Match by regex, separated by comma. Default: None.
+22. `-fic, --filter_columns`: Filter the data you want to filter for certain columns, separated by comma. Filter Rule: Any one filter success, the filter. Default: None.
+23. `-fibs, --filter_by_string`: Filter by string, separated by comma. Default: None.
+24. `-fibr, --filter_by_regex`: Filter by regex, separated by comma. Default: None.
+25. `-ecm, --enable_count_measurement`: Enable count measurement. Default: False.
+26. `-fi, --force_insert_even_csv_no_update`: Force insert data to influx, even csv no update. Default: False.
+27. `-fsc, --force_string_columns`: Force columns as string type, seperated as comma. Default: None
 
 
 > **Note:** 
