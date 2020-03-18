@@ -87,6 +87,10 @@ If no timestamp column, the timestamp is set to the last file modify time for wh
 
 `-fsc, --force_string_columns`: Force columns as string type, seperated as comma. Default: None
 
+`-fintc, --force_int_columns`: Force columns as int type, seperated as comma. Default: None
+
+`-ffc, --force_float_columns`: Force columns as float type, seperated as comma. Default: None
+
 
 > **Note:** 
 > 1. You could pass `*` to --field_columns to match all the fields: `--field_columns=*`, `--field_columns '*'`
