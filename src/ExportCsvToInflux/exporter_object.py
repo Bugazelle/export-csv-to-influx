@@ -428,9 +428,16 @@ class ExporterObject(object):
 
                 # Process Time
                 try:
-                    timestamp_float = float(row[time_column])
-                    timestamp_remove_decimal = int(str(timestamp_float).replace('.', ''))
-                    timestamp_influx = '{:<019d}'.format(timestamp_remove_decimal)
+                    # raise if not posix-time-like
+                    timestamp_str = str(float(row[time_column]))
+                    timestamp_magnitude = len(timestamp_str.split('.')[0])
+                    timestamp_remove_decimal = int(
+                        str(timestamp_str).replace('.', '')
+                    )
+                    # add zeros to convert to nanoseconds
+                    timestamp_influx = (
+                        '{:<0'+str(9+timestamp_magnitude)+'d}'
+                    ).format(timestamp_remove_decimal)
                     timestamp = int(timestamp_influx)
                 except ValueError:
                     try:
