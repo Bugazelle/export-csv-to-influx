@@ -11,7 +11,7 @@ addons:
   sonarcloud:
     organization: "bugazelle"
     token:
-      secure: SONAR_SCAN_KEY
+      secure: $SONAR_SCAN_KEY
 
 # 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
 jobs:
