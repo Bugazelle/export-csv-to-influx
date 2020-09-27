@@ -21,3 +21,9 @@ def test_get_csv_header(mock_file_exist, csv_file):
     csv_object = CSVObject()
     headers = csv_object.get_csv_header(csv_file)
     assert headers == ['header1', 'header2']
+
+
+def test_demo_1():
+    csv_object = CSVObject()
+    demo = csv_object.demo_1()
+    assert demo == 1

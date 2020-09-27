@@ -18,6 +18,12 @@ class CSVObject(object):
         self.delimiter = delimiter
         self.lineterminator = lineterminator
 
+    def demo_1(self):
+        return 1
+
+    def demo_2(self):
+        here is bug
+
     def get_csv_header(self, file_name):
         """Function: get_csv_header.
 
