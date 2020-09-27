@@ -9,7 +9,7 @@ before_install:
 # 代码规范扫描
 addons:
   sonarcloud:
-    organization: "bugazelle"
+    organization: "Bugazelle"
     token:
       secure: $SONAR_SCAN_KEY
 
