@@ -4,7 +4,7 @@ python:
 
 # 安装依赖包
 before_install:
-  - pip install coverage pytest -y
+  - pip install coverage pytest
 
 # 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
 jobs:
