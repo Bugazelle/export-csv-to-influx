@@ -27,4 +27,5 @@ jobs:
       script: >-
         coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="test-reports/junit-report.xml" tests/ &&
         coverage xml -i -o test-reports/coverage.xml &&
+        coverage report &&
         sonar-scanner
