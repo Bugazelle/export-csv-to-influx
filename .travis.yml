@@ -6,12 +6,25 @@ python:
 before_install:
   - pip install coverage pytest
 
+# 代码规范扫描
+addons:
+  sonarcloud:
+    organization: "bugazelle"
+    token:
+      secure: SONAR_SCAN_KEY
+
 # 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
 jobs:
   include:
     - stage: "unit_tests"
       name: "单元测试"
       script: "pytest tests/"
-    - stage: "install"
-      name: "验证编译 & 安装"
+    - stage: "build_and_install"
+      name: "编译 & 安装"
       script: "python setup.py install"
+    - stage: "sonar_scan"
+      name: "代码规范扫描"
+      script: >-
+        coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="test-reports/junit-report.xml" tests/ &&
+        coverage xml -i -o test-reports/coverage.xml &&
+        sonar-scanner
