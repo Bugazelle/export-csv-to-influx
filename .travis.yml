@@ -1,0 +1,23 @@
+language: python
+python:
+  - "2.7"
+  - "3.8"
+
+# 安装依赖包
+before_install:
+  - pip install coverage pytest
+
+# 按照顺序执行
+stages:
+  - intsall
+  - unit_test
+
+# 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
+jobs:
+  include:
+    - stage: "install"
+      name: "验证编译 & 安装"
+      script: "python setup.py install"
+    - stage: "unit_tests"
+      name: "单元测试"
+      script: "pytest tests/"
