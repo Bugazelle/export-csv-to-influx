@@ -4,7 +4,7 @@ python:
 
 # 安装依赖包
 before_install:
-  - pip install coverage pytest
+  - pip install coverage pytest influxdb
 
 # 代码规范扫描
 addons:
