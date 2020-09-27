@@ -25,7 +25,7 @@ jobs:
     - stage: "sonar_scan"
       name: "代码规范扫描"
       script: >-
-        coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="test-reports/junit-report.xml" tests/ &&
-        coverage xml -i -o test-reports/coverage.xml &&
+        coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="reports/junit-report.xml" tests/ &&
+        coverage xml -i -o reports/coverage.xml &&
         coverage report &&
         sonar-scanner
