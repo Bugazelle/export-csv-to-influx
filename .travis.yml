@@ -11,7 +11,7 @@ addons:
   sonarcloud:
     organization: "bugazelle"
     token:
-      secure: "${SONAR_SCAN_KEY}"
+      secure: "ExNwinZaGgNla+pbjcgWkCGAnIgeUDpp59YuAHB0CGK8sfi/PUjaGoAEDtVqub3OsWXwcYnEwa2IxwByvOJpigTkO/9738UIB88zEqjMxYOJrOhFMnlz9bKaDQf1nuDjy/c6YHrvGnuRV4rMMwA+6oKKpb+eM8dJqGa36znp2qZGXYNaB7foxf7REs3SBQd8DAJUosgB2n9C92H2eS+sZJW0jX8+YqHZZ3kT+eN2YJ5cwDC7AgSaPaLBzumj1OPt2R/dvdbSPYfdHdBK4/8wUzHKWgYxJ5bxAC0sbm4E4H0T7dTs+0T/BRv6v5SGSFhnFknYoDcRrkFMIl9lGS3DP9xpiwcNi7zaBG5V8rTUODZ3n/XJGpWlE9G7vJOtMZ/yIix0yMryoUGMrgT0stNNyq3yVfLFjzKXy+2jaEOj9L0T4gugIKKR55zFCopEHwYyaNYzLhXO5l17Hrj4CQX0mx/1SArQyrs486wNlr8BYxN5d10uaTgMZAMB9sNNeNk7Ja2K7wN3GVbC4715+dtXYxPM2WWlgPGR/7xvveAM0I2LN260schIKIG/EkiCeqDe/8IGUpTszaSVna+3U76ZoCoxslcLMH7vjcsLzQao9wf+jxbV5e6tqN2oaBCaIh/cRDuXppS/IRscCLZcCbAXPCHvjdBfuK/FgquFRK6sEUY="
 
 # 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
 jobs:
