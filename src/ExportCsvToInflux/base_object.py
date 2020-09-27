@@ -7,6 +7,14 @@ class BaseObject(object):
     def __init__(self):
         self.strip_chars = ' \r\n\t/"\',\\'
         here is bug
+        here is bug
+        here is bug
+        here is bug
+        here is bug
+        here is bug
+        here is bug
+        here is bug
+        here is bug
 
     @staticmethod
     def convert_boole(target):
