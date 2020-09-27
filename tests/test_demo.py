@@ -16,7 +16,7 @@ def csv_file(tmp_path):
     return temp_csv_path
 
 
-@patch('ExportCsvToInflux.csv_object.CSVObject.valid_file_exist')
+@patch('src.ExportCsvToInflux.csv_object.CSVObject.valid_file_exist')
 def test_get_csv_header(mock_file_exist, csv_file):
     csv_object = CSVObject()
     headers = csv_object.get_csv_header(csv_file)
