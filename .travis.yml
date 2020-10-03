@@ -29,12 +29,22 @@ jobs:
         coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="reports/junit-report.xml" tests/ &&
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
+
         sonar-scanner |& tee -a sonar_scanner.log &&
         cat sonar_scanner.log &&
-        sonar_task_api=$(grep -o 'https://sonarcloud.io/api/ce/task?id=.*' sonar_scanner.log) &&
-        curl -u $sonar_token: $sonar_task_api -o sonar_result.json &&
-        cat sonar_result.json &&
-        sonar_scan_status=$(jq -r ".task.status" sonar_result.json) &&
+
+        while true; do
+            sonar_task_api=$(grep -o 'https://sonarcloud.io/api/ce/task?id=.*' sonar_scanner.log);
+            curl -u $sonar_token: $sonar_task_api -o sonar_result.json;
+            cat sonar_result.json;
+            sonar_scan_status=$(jq -r ".task.status" sonar_result.json);
+            if [ $sonar_scan_status == "IN_PROGRESS" ]; then
+              sleep 10;
+            else
+              break;
+            fi
+          done &&
+
         if [ $sonar_scan_status == "FAILED" ]; then
             exit 1;
           else
