@@ -30,6 +30,7 @@ jobs:
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
         sonar-scanner > /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log &&
+        cat /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log &&
         sonar_task_id=$(sed -n 's/.*task\?id=\(.*\)/\1/p' /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log) &&
         wget -O sonar_result.json https://sonarcloud.io/api/ce/task?id=$sonar_task_id &&
         cat sonar_result.json
