@@ -35,18 +35,17 @@ jobs:
         curl -u $sonar_token: $sonar_task_api -o sonar_result.json &&
         cat sonar_result.json &&
         sonar_scan_status = $(jq -r ".task.status" sonar_result.json) &&
-        if [ $sonar_scan_status == "FAILED" ]
-        then
-          exit 1;
-        else
-          sonar_analysis_id=$(jq -r ".task.analysisId" sonar_result.json);
-          curl -u $sonar_token: https://sonarcloud.io/api/qualitygates/project_status?analysisId=$sonar_analysis_id -o sonar_analysis_result.json;
-          cat sonar_analysis_result.json;
-          project_status=$(jq -r ".projectStatus.status" sonar_analysis_result.json);
-          if [ $project_status == "ERROR" ] then
+        if [ $sonar_scan_status == "FAILED" ]; then
             exit 1;
+          else
+            sonar_analysis_id=$(jq -r ".task.analysisId" sonar_result.json);
+            curl -u $sonar_token: https://sonarcloud.io/api/qualitygates/project_status?analysisId=$sonar_analysis_id -o sonar_analysis_result.json;
+            cat sonar_analysis_result.json;
+            project_status=$(jq -r ".projectStatus.status" sonar_analysis_result.json);
+            if [ $project_status == "ERROR" ]; then
+              exit 1;
+            fi
           fi
-        fi
 
 branches:
   only:
