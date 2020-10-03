@@ -16,16 +16,24 @@ addons:
 # 编译 & 安装，单元测试，单元测试覆盖率，代码规范扫描
 jobs:
   include:
-    - stage: "单元测试"
+    - stage: "unit_tests"
+      name: "单元测试"
       script: "pytest tests/"
-    - stage: "编译 & 安装"
+    - stage: "build_and_install"
+      name: "编译 & 安装"
       script: "python setup.py install"
-    - stage: "Sonar代码规范扫描, 单元测试覆盖率检查"
+    - stage: "sonar_scan"
+      name: "代码规范扫描"
       script: >-
+        # 获得单元测试覆盖率
         coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="reports/junit-report.xml" tests/ &&
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
-        sonar-scanner
+        # 开始代码规范扫描
+        sonar-scanner &&
+        # 分析扫描结果
+        cat report-task.txt
+
 
 branches:
   only:
