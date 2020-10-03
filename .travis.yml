@@ -29,10 +29,10 @@ jobs:
         coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="reports/junit-report.xml" tests/ &&
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
-        sonar-scanner > /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log &&
-        cat /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log &&
-        sonar_task_id=$(sed -n 's/.*task\?id=\(.*\)/\1/p' /home/travis/build/Bugazelle/export-csv-to-influx/sonar_scanner.log) &&
-        wget -O sonar_result.json https://sonarcloud.io/api/ce/task?id=$sonar_task_id &&
+        sonar-scanner > sonar_scanner.log &&
+        cat sonar_scanner.log &&
+        sonar_task_api=$(grep -o 'https://sonarcloud.io/api/ce/task?id=.*' sonar_scanner.log) &&
+        wget -O sonar_result.json $sonar_task_api &&
         cat sonar_result.json
 
 
