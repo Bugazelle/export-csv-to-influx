@@ -52,7 +52,7 @@ jobs:
             curl -u $sonar_token: https://sonarcloud.io/api/qualitygates/project_status?analysisId=$sonar_analysis_id -o sonar_analysis_result.json;
             cat sonar_analysis_result.json;
             project_status=$(jq -r ".projectStatus.status" sonar_analysis_result.json);
-            if [ $project_status == "ERROR" ]; then
+            if [ $project_status == "ERROR" ] || [ $project_status == "null" ]; then
               exit 1;
             fi
           fi
@@ -60,3 +60,5 @@ jobs:
 branches:
   only:
   - ci_demo
+  - dev
+  - master
