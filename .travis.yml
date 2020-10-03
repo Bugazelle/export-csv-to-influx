@@ -5,6 +5,7 @@ python:
 # 安装依赖包
 before_install:
   - pip install coverage pytest influxdb
+  - apt-get install jq
 
 # 代码规范扫描
 addons:
@@ -29,7 +30,10 @@ jobs:
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
         sonar-scanner &&
-        ls -l
+        sonar_task_id=id=$(echo $(!!) | sed -n 's/.*task\?id=\(.*\)/\1/p') &&
+        wget -O sonar_result.json https://sonarcloud.io/api/ce/task?id=$sonar_task_id &&
+        cat sonar_result.json
+
 
 
 branches:
