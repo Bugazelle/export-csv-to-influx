@@ -30,7 +30,7 @@ jobs:
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
         sonar-scanner &&
-        sonar_task_id=id=$(echo $(!!) | sed -n 's/.*task\?id=\(.*\)/\1/p') &&
+        sonar_task_id=$(echo '$(!!)' | sed -n 's/.*task\?id=\(.*\)/\1/p') &&
         wget -O sonar_result.json https://sonarcloud.io/api/ce/task?id=$sonar_task_id &&
         cat sonar_result.json
 
