@@ -25,13 +25,10 @@ jobs:
     - stage: "sonar_scan"
       name: "代码规范扫描"
       script: >-
-        # 获得单元测试覆盖率
         coverage run --source=src/ExportCsvToInflux -m pytest --junitxml="reports/junit-report.xml" tests/ &&
         coverage xml -i -o reports/coverage.xml &&
         coverage report &&
-        # 开始代码规范扫描
         sonar-scanner &&
-        # 分析扫描结果
         cat report-task.txt
 
 
