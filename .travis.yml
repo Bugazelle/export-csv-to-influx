@@ -32,7 +32,7 @@ jobs:
         sonar-scanner > sonar_scanner.log &&
         cat sonar_scanner.log &&
         sonar_task_api=$(grep -o 'https://sonarcloud.io/api/ce/task?id=.*' sonar_scanner.log) &&
-        wget -O sonar_result.json $sonar_task_api &&
+        curl -u $sonar_token: $sonar_task_api -o sonar_result.json &&
         cat sonar_result.json
 
 
