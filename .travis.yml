@@ -34,7 +34,7 @@ jobs:
         sonar_task_api=$(grep -o 'https://sonarcloud.io/api/ce/task?id=.*' sonar_scanner.log) &&
         curl -u $sonar_token: $sonar_task_api -o sonar_result.json &&
         cat sonar_result.json &&
-        sonar_scan_status = $(jq -r ".task.status" sonar_result.json) &&
+        sonar_scan_status=$(jq -r ".task.status" sonar_result.json) &&
         if [ $sonar_scan_status == "FAILED" ]; then
             exit 1;
           else
