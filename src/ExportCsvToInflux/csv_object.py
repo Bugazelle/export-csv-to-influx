@@ -22,7 +22,14 @@ class CSVObject(object):
         return 1
 
     def demo_2(self):
-        here is bug
+        a = 0
+        a =+ 1
+        return a
+
+    def demo_3(self):
+        a = 0
+        a =+ 1
+        return a
 
     def get_csv_header(self, file_name):
         """Function: get_csv_header.
