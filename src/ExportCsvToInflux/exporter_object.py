@@ -47,12 +47,12 @@ class ExporterObject(object):
                     try:
                         v = int(v)
                     except ValueError:
-                        print('Warning: Failed to force "{0}" to float, skip...'.format(v))
+                        print('Warning: Failed to force "{0}" to int, skip...'.format(v))
                 if force_float_columns and column in force_float_columns:
                     try:
                         v = float(v)
                     except ValueError:
-                        print('Warning: Failed to force "{0}" to int, skip...'.format(v))
+                        print('Warning: Failed to force "{0}" to float, skip...'.format(v))
 
                 # If field is empty
                 if len(str(v)) == 0:
