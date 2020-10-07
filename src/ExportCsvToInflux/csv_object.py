@@ -193,6 +193,8 @@ class CSVObject(object):
                 len_value = len(value)
                 # Continue If Value Empty
                 if len_value == 0:
+                    int_type[key].append(False)
+                    float_type[key].append(False)
                     continue
                 # Valid Int Type
                 try:
