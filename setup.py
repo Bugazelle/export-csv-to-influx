@@ -1,17 +1,18 @@
 from setuptools import setup, find_packages
 import os
 import re
+import io
 
 CURDIR = os.path.dirname(os.path.abspath(__file__))
 url = 'https://github.com/Bugazelle/export-csv-to-influx'
 
-with open(os.path.join(CURDIR, 'src', 'ExportCsvToInflux', '__version__.py')) as f:
+with io.open(os.path.join(CURDIR, 'src', 'ExportCsvToInflux', '__version__.py'), encoding='utf-8') as f:
     VERSION = re.search("__version__ = '(.*)'", f.read()).group(1)
     download_url = '{0}/archive/v{1}.tar.gz'.format(url, VERSION)
 
 
 def readme():
-    with open('README.md') as f:
+    with io.open('README.md', encoding='utf-8') as f:
         long_description = f.read()
         return long_description
 
