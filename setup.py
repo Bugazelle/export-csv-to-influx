@@ -34,10 +34,10 @@ setup(
     install_requires=[
         'influxdb>=5.2.2',
         'python-dateutil>=2.8.0'
-        ],
+    ],
     download_url=download_url,
     url=url,
-    classifiers=(
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -47,7 +47,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-    ),
+    ],
     entry_points={
         'console_scripts': [
             'export_csv_to_influx = ExportCsvToInflux.exporter_object:export_csv_to_influx',
