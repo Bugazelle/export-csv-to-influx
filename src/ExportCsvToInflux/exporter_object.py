@@ -198,7 +198,11 @@ class ExporterObject(object):
                              force_insert_even_csv_no_update=False,
                              force_string_columns=None,
                              force_int_columns=None,
-                             force_float_columns=None):
+                             force_float_columns=None,
+                             http_schema='http',
+                             org='my-org',
+                             bucket='my-bucket',
+                             token=None):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
@@ -230,11 +234,18 @@ class ExporterObject(object):
         :param force_string_columns: force the columns as string (default None)
         :param force_int_columns: force the columns as int (default None)
         :param force_float_columns: force the columns as float (default None)
+        :param http_schema: for 2.x only, influxdb http schema, could be http or https (default http)
+        :param org: for 2.x only, my org (default my-org)
+        :param bucket: for 2.x only, my bucket (default my-bucket)
+        :param token: for 2.x only, token (default None)
         """
 
         # Init: object
         csv_object = CSVObject(delimiter=delimiter, lineterminator=lineterminator)
-        influx_object = InfluxObject(db_server_name=db_server_name, db_user=db_user, db_password=db_password)
+        influx_object = InfluxObject(db_server_name=db_server_name,
+                                     db_user=db_user,
+                                     db_password=db_password,
+                                     http_schema=http_schema)
         base_object = BaseObject()
 
         # Init: Arguments
@@ -544,22 +555,49 @@ class ExporterObject(object):
             print('')
 
 
+class UserNamespace(object):
+    pass
+
+
 def export_csv_to_influx():
     parser = argparse.ArgumentParser(description='CSV to InfluxDB.')
+
+    # Parse: Parse the server name, and judge the influx version
+    parser.add_argument('-s', '--server', nargs='?', default='localhost:8086', const='localhost:8086',
+                        help='InfluxDB Server address. Default: localhost:8086')
+    user_namespace = UserNamespace()
+    server_args = parser.parse_known_args(namespace=user_namespace)
+    influx_object = InfluxObject(db_server_name=user_namespace.server)
+    influx_version = influx_object.get_influxdb_version()
+    print('Info: The influxdb version is {influx_version}'.format(influx_version=influx_version))
+
+    # influxdb 0.x, 1.x
+    parser.add_argument('-db', '--dbname',
+                        required=True if influx_version.startswith('0') or influx_version.startswith('1') else False,
+                        help='InfluxDB Database name.')
+    parser.add_argument('-u', '--user', nargs='?', default='admin', const='admin',
+                        help='InfluxDB User name.')
+    parser.add_argument('-p', '--password', nargs='?', default='admin', const='admin',
+                        help='InfluxDB Password.')
+
+    # influxdb 2.x
+    parser.add_argument('-http_schema', '--http_schema', nargs='?', default='http', const='http',
+                        help='Influxdb http schema, could be http or https. Default: http.')
+    parser.add_argument('-org', '--org', nargs='?', default='my-org', const='my-org',
+                        help='My org. Default: my-org.')
+    parser.add_argument('-bucket', '--bucket', nargs='?', default='my-bucket', const='my-bucket',
+                        help='My bucket. Default: my-bucket.')
+    parser.add_argument('-token', '--token',
+                        required=True if influx_version.startswith('2') else False,
+                        help='My bucket. Default: my-bucket.')
+
+    # Parse: Parse the others
     parser.add_argument('-c', '--csv', required=True,
                         help='Input CSV file.')
     parser.add_argument('-d', '--delimiter', nargs='?', default=',', const=',',
                         help='CSV delimiter. Default: \',\'.')
     parser.add_argument('-lt', '--lineterminator', nargs='?', default='\n', const='\n',
                         help='CSV lineterminator. Default: \'\\n\'.')
-    parser.add_argument('-s', '--server', nargs='?', default='localhost:8086', const='localhost:8086',
-                        help='InfluxDB Server address. Default: localhost:8086')
-    parser.add_argument('-u', '--user', nargs='?', default='admin', const='admin',
-                        help='InfluxDB User name.')
-    parser.add_argument('-p', '--password', nargs='?', default='admin', const='admin',
-                        help='InfluxDB Password.')
-    parser.add_argument('-db', '--dbname', required=True,
-                        help='InfluxDB Database name.')
     parser.add_argument('-m', '--measurement', required=True,
                         help='Measurement name.')
     parser.add_argument('-t', '--time_column', nargs='?', default='timestamp', const='timestamp',
@@ -610,10 +648,10 @@ def export_csv_to_influx():
                         help='Force columns as float type, separated by comma. Default: None.')
     parser.add_argument('-v', '--version', action="version", version=__version__)
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=user_namespace)
     exporter = ExporterObject()
     exporter.export_csv_to_influx(csv_file=args.csv,
-                                  db_server_name=args.server,
+                                  db_server_name=user_namespace.server,
                                   db_user=args.user,
                                   db_password=args.password,
                                   db_name=args.dbname,
@@ -640,4 +678,8 @@ def export_csv_to_influx():
                                   force_insert_even_csv_no_update=args.force_insert_even_csv_no_update,
                                   force_string_columns=args.force_string_columns,
                                   force_int_columns=args.force_int_columns,
-                                  force_float_columns=args.force_float_columns)
+                                  force_float_columns=args.force_float_columns,
+                                  http_schema=args.http_schema,
+                                  org=args.org,
+                                  bucket=args.bucket,
+                                  token=args.token)
