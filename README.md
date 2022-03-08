@@ -123,7 +123,7 @@ timestamp,url,response_time
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">1</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Write whole data into influx</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \ <br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
             <pre> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>
@@ -182,8 +182,19 @@ timestamp,url,response_time
     time                match_timestamp match_url total
     ----                --------------- --------- -----
     1562957134000000000 3               2         9
+   
+    // Influx 2.x: For more info about Flux, see https://docs.influxdata.com/influxdb/v2.1/query-data/flux/
+   influx query 'from(bucket:"my-bucket") |> range(start:-100h) |> filter(fn: (r) => r._measurement == "demo.count")' --raw
+   
+   #group,false,false,true,true,false,false,true,true
+   #datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,long,string,string
+   #default,_result,,,,,,,
+   ,result,table,_start,_stop,_time,_value,_field,_measurement
+   ,,2,2022-03-04T09:51:49.7425566Z,2022-03-08T13:51:49.7425566Z,2022-03-07T05:45:34Z,2,match_timestamp,demo.count
+   ,,3,2022-03-04T09:51:49.7425566Z,2022-03-08T13:51:49.7425566Z,2022-03-07T05:45:34Z,2,match_url,demo.count
+   ,,4,2022-03-04T09:51:49.7425566Z,2022-03-08T13:51:49.7425566Z,2022-03-07T05:45:34Z,9,total,demo.count
     ```
-
+   
 ## Special Thanks
 
 The lib is inspired by: [https://github.com/fabio-miranda/csv-to-influxdb](https://github.com/fabio-miranda/csv-to-influxdb)
