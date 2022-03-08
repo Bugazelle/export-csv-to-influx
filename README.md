@@ -175,6 +175,7 @@ timestamp,url,response_time
 3. If enable the count measurement, the count measurement is:
     
     ```text
+    // Influx 0.x, 1.x
     select * from "demo.count"
  
     name: demo.count

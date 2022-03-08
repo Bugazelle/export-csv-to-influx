@@ -559,7 +559,7 @@ class ExporterObject(object):
                 for k, v in self.filter_count.items():
                     k = 'filter_{0}'.format(k)
                     fields[k] = v
-                count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
+                count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': {}}]
                 if influx_version.startswith('0') or influx_version.startswith('1'):
                     response = client.write_points(count_point)
                     if response is False:
@@ -567,7 +567,7 @@ class ExporterObject(object):
                         sys.exit(error_message)
                 else:
                     write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
-                    write_client.write(bucket_name, org_name, data_points)
+                    write_client.write(bucket_name, org_name, count_point)
                     write_client.close()
                 print('Info: Wrote count measurement {0} points'.format(count_point))
 
