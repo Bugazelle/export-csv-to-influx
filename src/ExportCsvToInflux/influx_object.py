@@ -98,11 +98,11 @@ class InfluxObject(object):
             from influxdb_client import InfluxDBClient
             try:
                 client = InfluxDBClient(url=self.influxdb_url, token=self.token, org=org_name)
-                client.health()
+                client.buckets_api().find_buckets()
                 return client
             except (ConnectionError, Exception):
-                sys.exit('Error: Failed to connect the influx, please check the provided server name, '
-                         'org name and token: {0}, {1}, {2}'.format(self.db_server_name, org_name, self.token))
+                sys.exit('Error: Failed to connect the influx, please check the provided server name - {0}, '
+                         'org name - {1} and token - {2}'.format(self.db_server_name, org_name, self.token))
 
     def create_influx_org_if_not_exists(self, org_name, client=None):
         """Function: create_influx_org_if_not_exists
