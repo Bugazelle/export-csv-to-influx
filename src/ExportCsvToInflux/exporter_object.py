@@ -1,5 +1,4 @@
 from pytz.exceptions import UnknownTimeZoneError
-from influxdb.exceptions import InfluxDBClientError
 from .influx_object import InfluxObject
 from collections import defaultdict
 from .base_object import BaseObject
@@ -13,6 +12,11 @@ import csv
 import sys
 import os
 import re
+
+try:
+    from influxdb_client import WriteOptions
+except ImportError:
+    pass
 
 
 class ExporterObject(object):
@@ -200,16 +204,16 @@ class ExporterObject(object):
                              force_int_columns=None,
                              force_float_columns=None,
                              http_schema='http',
-                             org='my-org',
-                             bucket='my-bucket',
+                             org_name='my-org',
+                             bucket_name='my-bucket',
                              token=None):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
         :param db_server_name: the influx server (default localhost:8086)
-        :param db_user: the influx db user (default admin)
-        :param db_password: the influx db password (default admin)
-        :param db_name: the influx db name
+        :param db_user: for 0.x, 1.x only, the influx db user (default admin)
+        :param db_password: for 0.x, 1.x only, the influx db password (default admin)
+        :param db_name: for 0.x, 1.x only, the influx db name
         :param db_measurement: the measurement in a db
         :param time_column: the time columns (default timestamp)
         :param tag_columns: the tag columns (default None)
@@ -235,8 +239,8 @@ class ExporterObject(object):
         :param force_int_columns: force the columns as int (default None)
         :param force_float_columns: force the columns as float (default None)
         :param http_schema: for 2.x only, influxdb http schema, could be http or https (default http)
-        :param org: for 2.x only, my org (default my-org)
-        :param bucket: for 2.x only, my bucket (default my-bucket)
+        :param org_name: for 2.x only, my org (default my-org)
+        :param bucket_name: for 2.x only, my bucket (default my-bucket)
         :param token: for 2.x only, token (default None)
         """
 
@@ -245,20 +249,20 @@ class ExporterObject(object):
         influx_object = InfluxObject(db_server_name=db_server_name,
                                      db_user=db_user,
                                      db_password=db_password,
-                                     http_schema=http_schema)
+                                     http_schema=http_schema,
+                                     token=token)
+        client = influx_object.connect_influx_db(db_name=db_name, org_name=org_name)
+        influx_version = influx_object.influxdb_version
         base_object = BaseObject()
 
         # Init: Arguments
-        base_object.validate_str(csv_file)
-        base_object.validate_str(db_name)
-        base_object.validate_str(db_measurement)
-        base_object.validate_str(db_server_name)
-        base_object.validate_str(db_user)
-        base_object.validate_str(db_password)
-        base_object.validate_str(time_format)
-        base_object.validate_str(delimiter)
-        base_object.validate_str(lineterminator)
-        base_object.validate_str(time_zone)
+        base_object.validate_str(csv_file, target_name='csv_file')
+        base_object.validate_str(db_name, target_name='db_name')
+        base_object.validate_str(db_measurement, target_name='db_measurement')
+        base_object.validate_str(time_format, target_name='time_format')
+        base_object.validate_str(delimiter, target_name='delimiter')
+        base_object.validate_str(lineterminator, target_name='lineterminater')
+        base_object.validate_str(time_zone, target_name='time_zone')
         tag_columns = base_object.str_to_list(tag_columns)
         field_columns = base_object.str_to_list(field_columns)
         limit_string_length_columns = [] if str(limit_string_length_columns).lower() == 'none' \
@@ -307,12 +311,17 @@ class ExporterObject(object):
         force_insert_even_csv_no_update = base_object.convert_boole(force_insert_even_csv_no_update)
         count_measurement = '{0}.count'.format(db_measurement)
         if drop_measurement:
-            influx_object.drop_measurement(db_name, db_measurement)
-            influx_object.drop_measurement(db_name, count_measurement)
+            influx_object.drop_measurement(db_name, db_measurement, bucket_name, org_name, client)
+            influx_object.drop_measurement(db_name, count_measurement, bucket_name, org_name, client)
         if drop_database:
-            influx_object.drop_database(db_name)
-        client = influx_object.create_influx_db_if_not_exists(db_name)
-        client.switch_user(db_user, db_password)
+            if influx_version.startswith('0') or influx_version.startswith('1'):
+                influx_object.drop_database(db_name, client)
+                influx_object.create_influx_db_if_not_exists(db_name, client)
+            else:
+                influx_object.drop_bucket(org_name=org_name, bucket_name=bucket_name)
+                influx_object.create_influx_bucket_if_not_exists(org_name=org_name, bucket_name=bucket_name)
+        if influx_version.startswith('0') or influx_version.startswith('1'):
+            client.switch_user(db_user, db_password)
 
         # Init: batch_size
         try:
@@ -493,8 +502,16 @@ class ExporterObject(object):
                     print('Info: Read {0} lines from {1}'.format(count, csv_file_item))
                     print('Info: Inserting {0} data_points...'.format(data_points_len))
                     try:
-                        response = client.write_points(data_points)
-                    except InfluxDBClientError as e:
+                        if influx_version.startswith('0') or influx_version.startswith('1'):
+                            response = client.write_points(data_points)
+                            if response is False:
+                                error_message = 'Info: Problem inserting points, exiting...'
+                                sys.exit(error_message)
+                        else:
+                            write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
+                            write_client.write(bucket_name, org_name, data_points)
+                            write_client.close()
+                    except influx_object.influxdb_client_error as e:
                         error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
                                         '       Please double check the csv data. \n' \
                                         '       If would like to force data type to target data type, use: \n' \
@@ -503,11 +520,7 @@ class ExporterObject(object):
                                         '       --force_float_columns \n' \
                                         '       Error Details: {0}'.format(e)
                         sys.exit(error_message)
-                    if response is False:
-                        error_message = 'Info: Problem inserting points, exiting...'
-                        sys.exit(error_message)
-                    print('Info: Wrote {0} lines, response: {1}'.format(data_points_len, response))
-
+                    print('Info: Wrote {0} points'.format(data_points_len))
                     data_points = list()
 
             # Write rest points
@@ -516,8 +529,16 @@ class ExporterObject(object):
                 print('Info: Read {0} lines from {1}'.format(count, csv_file_item))
                 print('Info: Inserting {0} data_points...'.format(data_points_len))
                 try:
-                    response = client.write_points(data_points)
-                except InfluxDBClientError as e:
+                    if influx_version.startswith('0') or influx_version.startswith('1'):
+                        response = client.write_points(data_points)
+                        if response is False:
+                            error_message = 'Error: Problem inserting points, exiting...'
+                            sys.exit(error_message)
+                    else:
+                        write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
+                        write_client.write(bucket_name, org_name, data_points)
+                        write_client.close()
+                except influx_object.influxdb_client_error as e:
                     error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
                                     '       Please double check the csv data. \n' \
                                     '       If would like to force data type to target data type, use: \n' \
@@ -526,10 +547,7 @@ class ExporterObject(object):
                                     '       --force_float_columns \n' \
                                     '       Error Details: {0}'.format(e)
                     sys.exit(error_message)
-                if response is False:
-                    error_message = 'Error: Problem inserting points, exiting...'
-                    sys.exit(error_message)
-                print('Info: Wrote {0}, response: {1}'.format(data_points_len, response))
+                print('Info: Wrote {0} points'.format(data_points_len))
 
             # Write count measurement
             if enable_count_measurement:
@@ -542,11 +560,16 @@ class ExporterObject(object):
                     k = 'filter_{0}'.format(k)
                     fields[k] = v
                 count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': None}]
-                response = client.write_points(count_point)
-                if response is False:
-                    error_message = 'Error: Problem inserting points, exiting...'
-                    sys.exit(error_message)
-                print('Info: Wrote count measurement {0}, response: {1}'.format(count_point, response))
+                if influx_version.startswith('0') or influx_version.startswith('1'):
+                    response = client.write_points(count_point)
+                    if response is False:
+                        error_message = 'Error: Problem inserting points, exiting...'
+                        sys.exit(error_message)
+                else:
+                    write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
+                    write_client.write(bucket_name, org_name, data_points)
+                    write_client.close()
+                print('Info: Wrote count measurement {0} points'.format(count_point))
 
                 self.match_count = defaultdict(int)
                 self.filter_count = defaultdict(int)
@@ -566,7 +589,7 @@ def export_csv_to_influx():
     parser.add_argument('-s', '--server', nargs='?', default='localhost:8086', const='localhost:8086',
                         help='InfluxDB Server address. Default: localhost:8086')
     user_namespace = UserNamespace()
-    server_args = parser.parse_known_args(namespace=user_namespace)
+    parser.parse_known_args(namespace=user_namespace)
     influx_object = InfluxObject(db_server_name=user_namespace.server)
     influx_version = influx_object.get_influxdb_version()
     print('Info: The influxdb version is {influx_version}'.format(influx_version=influx_version))
@@ -574,22 +597,22 @@ def export_csv_to_influx():
     # influxdb 0.x, 1.x
     parser.add_argument('-db', '--dbname',
                         required=True if influx_version.startswith('0') or influx_version.startswith('1') else False,
-                        help='InfluxDB Database name.')
+                        help='For 0.x, 1.x only, InfluxDB Database name.')
     parser.add_argument('-u', '--user', nargs='?', default='admin', const='admin',
-                        help='InfluxDB User name.')
+                        help='For 0.x, 1.x only, InfluxDB User name.')
     parser.add_argument('-p', '--password', nargs='?', default='admin', const='admin',
-                        help='InfluxDB Password.')
+                        help='For 0.x, 1.x only, InfluxDB Password.')
 
     # influxdb 2.x
     parser.add_argument('-http_schema', '--http_schema', nargs='?', default='http', const='http',
-                        help='Influxdb http schema, could be http or https. Default: http.')
+                        help='For 2.x only, the influxdb http schema, could be http or https. Default: http.')
     parser.add_argument('-org', '--org', nargs='?', default='my-org', const='my-org',
-                        help='My org. Default: my-org.')
+                        help='For 2.x only, the org. Default: my-org.')
     parser.add_argument('-bucket', '--bucket', nargs='?', default='my-bucket', const='my-bucket',
-                        help='My bucket. Default: my-bucket.')
+                        help='For 2.x only, the bucket. Default: my-bucket.')
     parser.add_argument('-token', '--token',
                         required=True if influx_version.startswith('2') else False,
-                        help='My bucket. Default: my-bucket.')
+                        help='For 2.x only, the access token')
 
     # Parse: Parse the others
     parser.add_argument('-c', '--csv', required=True,
@@ -654,7 +677,7 @@ def export_csv_to_influx():
                                   db_server_name=user_namespace.server,
                                   db_user=args.user,
                                   db_password=args.password,
-                                  db_name=args.dbname,
+                                  db_name='None' if args.dbname is None else args.dbname,
                                   db_measurement=args.measurement,
                                   time_column=args.time_column,
                                   time_format=args.time_format,
@@ -680,6 +703,6 @@ def export_csv_to_influx():
                                   force_int_columns=args.force_int_columns,
                                   force_float_columns=args.force_float_columns,
                                   http_schema=args.http_schema,
-                                  org=args.org,
-                                  bucket=args.bucket,
-                                  token=args.token)
+                                  org_name=args.org,
+                                  bucket_name=args.bucket,
+                                  token='None' if args.token is None else args.token)

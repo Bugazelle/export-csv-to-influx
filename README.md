@@ -42,13 +42,13 @@ You could use `export_csv_to_influx -h` to see the help guide.
 > 3. If some csv cells have no value, auto fill the influx db based on column data type: `int: -999`, `float: -999.0`, `string: -`
 
 | #  | Option                                   | Mandatory              | Default           | Description                                                                                                                                                                                    |
-|:--:|------------------------------------------|:---------:|:-----------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|:--:|------------------------------------------|:----------------------:|:-----------------:|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1  | `-c, --csv`                              | Yes                    |                   | CSV file path, or the folder path                                                                                                                                                              |
 | 2  | `-db, --dbname`                          | For 0.x, 1.x only: Yes |                   | InfluxDB Database name                                                                                                                                                                         |
 | 3  | `-u, --user`                             | For 0.x, 1.x only: No  | admin             | InfluxDB User name                                                                                                                                                                             |
 | 4  | `-p, --password`                         | For 0.x, 1.x only: No  | admin             | InfluxDB Password                                                                                                                                                                              |
-| 5  | `-org, --org`                            | For 2.x only: Yes      | my-org            | For 2.x only, my org                                                                                                                                                                           |
-| 6  | `-bucket, --bucket`                      | For 2.x only: Yes      | my-bucket         | For 2.x only, my bucket                                                                                                                                                                        |
+| 5  | `-org, --org`                            | For 2.x only: No       | my-org            | For 2.x only, my org                                                                                                                                                                           |
+| 6  | `-bucket, --bucket`                      | For 2.x only: No       | my-bucket         | For 2.x only, my bucket                                                                                                                                                                        |
 | 7  | `-http_schema, --http_schema`            | For 2.x only: No       | http              | For 2.x only, influxdb http schema, could be http or https                                                                                                                                     |
 | 8  | `-token, --token`                        | For 2.x only: Yes      |                   | For 2.x only, n                                                                                                                                                                                |
 | 9  | `-m, --measurement`                      | Yes                    |                   | Measurement name                                                                                                                                                                               |
@@ -63,7 +63,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 | 18 | `-b, --batch_size`                       | No                     | 500               | Batch size when inserting data to influx                                                                                                                                                       |
 | 19 | `-lslc, --limit_string_length_columns`   | No                     | None              | Limit string length column, separated by comma                                                                                                                                                 |
 | 20 | `-ls, --limit_length`                    | No                     | 20                | Limit length                                                                                                                                                                                   |
-| 21 | `-dd, --drop_database`                   | No                     | False             | Drop database before inserting data                                                                                                                                                            |
+| 21 | `-dd, --drop_database`                   | Compatible with 2.x: No| False             | Drop database or bucket before inserting data                                                                                                                                                  |
 | 22 | `-dm, --drop_measurement`                | No                     | False             | Drop measurement before inserting data                                                                                                                                                         |
 | 23 | `-mc, --match_columns`                   | No                     | None              | Match the data you want to get for certain columns, separated by comma. Match Rule: All matches, then match                                                                                    |
 | 24 | `-mbs, --match_by_string`                | No                     | None              | Match by string, separated by comma                                                                                                                                                            |
@@ -93,108 +93,32 @@ print(exporter.export_csv_to_influx.__doc__)
 
 ## Sample
 
-Here is the **demo.csv**.
+1. Here is the **demo.csv**
 
 ``` 
 timestamp,url,response_time
-2019-07-11 02:04:05,https://jmeter.apache.org/,1.434
-2019-07-11 02:04:06,https://jmeter.apache.org/,2.434
-2019-07-11 02:04:07,https://jmeter.apache.org/,1.200
-2019-07-11 02:04:08,https://jmeter.apache.org/,1.675
-2019-07-11 02:04:09,https://jmeter.apache.org/,2.265
-2019-07-11 02:04:10,https://sample-demo.org/,1.430
-2019-07-12 08:54:13,https://sample-show.org/,1.300
-2019-07-12 14:06:00,https://sample-7.org/,1.289
-2019-07-12 18:45:34,https://sample-8.org/,2.876
+2022-03-08 02:04:05,https://jmeter.apache.org/,1.434
+2022-03-08 02:04:06,https://jmeter.apache.org/,2.434
+2022-03-08 02:04:07,https://jmeter.apache.org/,1.200
+2022-03-08 02:04:08,https://jmeter.apache.org/,1.675
+2022-03-08 02:04:09,https://jmeter.apache.org/,2.265
+2022-03-08 02:04:10,https://sample-demo.org/,1.430
+2022-03-08 03:54:13,https://sample-show.org/,1.300
+2022-03-07 04:06:00,https://sample-7.org/,1.289
+2022-03-07 05:45:34,https://sample-8.org/,2.876
 ```
 
-1. Command to export whole data into influx:
+2. Command samples
 
-    ``` 
-    export_csv_to_influx \
-    --csv demo.csv \
-    --dbname demo \
-    --measurement demo \
-    --tag_columns url \
-    --field_columns response_time \
-    --user admin \
-    --password admin \
-    --force_insert_even_csv_no_update True \
-    --server 127.0.0.1:8086
-    ```
+| # | Description                                                                                                                                          | Influx 0.x, 1.x                                                                                                                                                                                                                                                                                                                                                                                                                                           | Influx 2.x                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|---|------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | Write whole data into influx                                                                                                                         | <pre><br>export_csv_to_influx \ <br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>                                                                                                                                                      | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>                                                                                                                                                       |
+| 2 | Write whole data into influx, **but: drop database or bucket**                                                                                       | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --force_insert_even_csv_no_update True \<br>  --drop_database=True<br></pre>                                                                                                                           | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>                                                                                                                           |
+| 3 | Write part of data: **timestamp matches 2022-03-07 and url matches sample-\d+**                                                                      | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --force_insert_even_csv_no_update True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>                                        | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>                                        |
+| 4 | Filter part of data, and write into influx: **url filters sample**                                                                                   | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --force_insert_even_csv_no_update True \<br>  --filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>                                                               | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>                                                               |
+| 5 | Enable count measurement. A new measurement named: **demo.count** generated, with match: **timestamp matches 2022-03-07 and url matches sample-\d+** | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --force_insert_even_csv_no_update True \<br>  --match_columns timestamp,url \<br>  --match_by_reg '2022-03-07,sample-\d+' \<br>  --enable_count_measurement True<br></pre> | <pre><br>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+' \<br>  --enable_count_measurement True<br></pre> |
 
-2. Command to export whole data into influx, **but: drop database**
-
-    ```
-    export_csv_to_influx \
-    --csv demo.csv \
-    --dbname demo \
-    --measurement demo \
-    --tag_columns url \
-    --field_columns response_time \
-    --user admin \
-    --password admin \
-    --server 127.0.0.1:8086 \
-    --force_insert_even_csv_no_update True \
-    --drop_database=True
-    ```
-
-3. Command to export part of data: **timestamp matches 2019-07-12 and url matches sample-\d+**
-
-    ``` 
-    export_csv_to_influx \
-    --csv demo.csv \
-    --dbname demo \
-    --measurement demo \
-    --tag_columns url \
-    --field_columns response_time \
-    --user admin \
-    --password admin \
-    --server 127.0.0.1:8086 \
-    --drop_database=True \
-    --force_insert_even_csv_no_update True \
-    --match_columns=timestamp,url \
-    --match_by_reg='2019-07-12,sample-\d+'
-    ```
-    
-4. Filter part of data, and the export into influx: **url filter sample**
-
-    ``` 
-    export_csv_to_influx \
-    --csv demo.csv \
-    --dbname demo \
-    --measurement demo \
-    --tag_columns url \
-    --field_columns response_time \
-    --user admin \
-    --password admin \
-    --server 127.0.0.1:8086 \
-    --drop_database True \
-    --force_insert_even_csv_no_update True \
-    --filter_columns timestamp,url \
-    --filter_by_reg 'sample'
-    ```
-
-5. Enable count measurement. A new measurement named: **demo.count** generated, with match: **timestamp matches 2019-07-12 and url matches sample-\d+**
-
-    ```
-    export_csv_to_influx \
-    --csv demo.csv \
-    --dbname demo \
-    --measurement demo \
-    --tag_columns url \
-    --field_columns response_time \
-    --user admin \
-    --password admin \
-    --server 127.0.0.1:8086 \
-    --drop_database True \
-    --force_insert_even_csv_no_update True \
-    --match_columns timestamp,url \
-    --match_by_reg '2019-07-12,sample-\d+' \
-    --enable_count_measurement True 
-    ```
-    
-    The count measurement is:
+3. If enable the count measurement, the count measurement is:
     
     ```text
     select * from "demo.count"
