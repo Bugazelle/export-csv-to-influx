@@ -8,6 +8,7 @@ from pytz import timezone
 import collections
 import argparse
 import datetime
+import uuid
 import csv
 import sys
 import os
@@ -40,7 +41,8 @@ class ExporterObject(object):
                               limit_string_length_columns,
                               force_string_columns,
                               force_int_columns,
-                              force_float_columns):
+                              force_float_columns,
+                              unique):
         """Private function: __process_tags_fields"""
 
         results = dict()
@@ -82,6 +84,9 @@ class ExporterObject(object):
                         v = -999.0
 
             results[column] = v
+        if unique:
+            results['uniq'] = 'uniq-{0}'.format(str(uuid.uuid4())[:8])
+
         return results
 
     def __check_match_and_filter(self,
@@ -204,14 +209,15 @@ class ExporterObject(object):
                              filter_by_string=None,
                              filter_by_regex=None,
                              enable_count_measurement=False,
-                             force_insert_even_csv_no_update=False,
+                             force_insert_even_csv_no_update=True,
                              force_string_columns=None,
                              force_int_columns=None,
                              force_float_columns=None,
                              http_schema='http',
                              org_name='my-org',
                              bucket_name='my-bucket',
-                             token=None):
+                             token=None,
+                             unique=False):
         """Function: export_csv_to_influx
 
         :param csv_file: the csv file path/folder
@@ -239,7 +245,7 @@ class ExporterObject(object):
         :param filter_by_string: filter columns by string (default None)
         :param filter_by_regex: filter columns by regex (default None)
         :param enable_count_measurement: create the measurement with only count info (default False)
-        :param force_insert_even_csv_no_update: force insert data to influx even csv data no update (default False)
+        :param force_insert_even_csv_no_update: force insert data to influx even csv data no update (default True)
         :param force_string_columns: force the columns as string (default None)
         :param force_int_columns: force the columns as int (default None)
         :param force_float_columns: force the columns as float (default None)
@@ -247,6 +253,7 @@ class ExporterObject(object):
         :param org_name: for 2.x only, my org (default my-org)
         :param bucket_name: for 2.x only, my bucket (default my-bucket)
         :param token: for 2.x only, token (default None)
+        :param unique: insert the duplicated data (default False)
         """
 
         # Init: object
@@ -483,7 +490,8 @@ class ExporterObject(object):
                                                   limit_string_length_columns=limit_string_length_columns,
                                                   force_string_columns=force_string_columns,
                                                   force_int_columns=force_int_columns,
-                                                  force_float_columns=force_float_columns)
+                                                  force_float_columns=force_float_columns,
+                                                  unique=unique)
 
                 # Process fields
                 fields = self.__process_tags_fields(columns=field_columns,
@@ -494,7 +502,8 @@ class ExporterObject(object):
                                                     limit_string_length_columns=limit_string_length_columns,
                                                     force_string_columns=force_string_columns,
                                                     force_int_columns=force_int_columns,
-                                                    force_float_columns=force_float_columns)
+                                                    force_float_columns=force_float_columns,
+                                                    unique=False)
 
                 point = {'measurement': db_measurement, 'time': timestamp, 'fields': fields, 'tags': tags}
                 data_points.append(point)
@@ -665,7 +674,7 @@ def export_csv_to_influx():
                         help='Filter by regex, separated by comma. Default: None')
     parser.add_argument('-ecm', '--enable_count_measurement', nargs='?', default=False, const=False,
                         help='Enable count measurement. Default: False')
-    parser.add_argument('-fi', '--force_insert_even_csv_no_update', nargs='?', default=False, const=False,
+    parser.add_argument('-fi', '--force_insert_even_csv_no_update', nargs='?', default=True, const=True,
                         help='Force insert data to influx, even csv no update. Default: False')
     parser.add_argument('-fsc', '--force_string_columns', nargs='?', default=None, const=None,
                         help='Force columns as string type, separated by comma. Default: None.')
@@ -673,6 +682,8 @@ def export_csv_to_influx():
                         help='Force columns as int type, separated by comma. Default: None.')
     parser.add_argument('-ffc', '--force_float_columns', nargs='?', default=None, const=None,
                         help='Force columns as float type, separated by comma. Default: None.')
+    parser.add_argument('-uniq', '--unique', nargs='?', default=False, const=False,
+                        help='Write duplicated points. Default: False.')
     parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args(namespace=user_namespace)
@@ -709,4 +720,5 @@ def export_csv_to_influx():
                                   http_schema=args.http_schema,
                                   org_name=args.org,
                                   bucket_name=args.bucket,
-                                  token='None' if args.token is None else args.token)
+                                  token='None' if args.token is None else args.token,
+                                  unique=args.unique)
