@@ -6,7 +6,7 @@ Export CSV To Influx
 ## Support:
 
 - Influx 0.x, 1.x
-- influx 2.x
+- influx 2.x: Start supporting from 2.0.0
 
 > Important Note: Influx 2.x has build-in csv write feature, it is more powerful: [https://docs.influxdata.com/influxdb/v2.1/write-data/developer-tools/csv/](https://docs.influxdata.com/influxdb/v2.1/write-data/developer-tools/csv/) 
 

@@ -25,6 +25,11 @@ class ExporterObject(object):
     def __init__(self):
         self.match_count = defaultdict(int)
         self.filter_count = defaultdict(int)
+        self._write_response = None
+
+    def __error_cb(self, details, data, exception):
+        """Private Function: error callback for write api"""
+        self._write_response = False
 
     @staticmethod
     def __process_tags_fields(columns,
@@ -503,14 +508,11 @@ class ExporterObject(object):
                     print('Info: Inserting {0} data_points...'.format(data_points_len))
                     try:
                         if influx_version.startswith('0') or influx_version.startswith('1'):
-                            response = client.write_points(data_points)
-                            if response is False:
-                                error_message = 'Info: Problem inserting points, exiting...'
-                                sys.exit(error_message)
+                            self._write_response = client.write_points(data_points)
                         else:
-                            write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
-                            write_client.write(bucket_name, org_name, data_points)
-                            write_client.close()
+                            with client.write_api(write_options=WriteOptions(batch_size=batch_size),
+                                                  error_callback=self.__error_cb) as write_client:
+                                write_client.write(bucket_name, org_name, data_points)
                     except influx_object.influxdb_client_error as e:
                         error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
                                         '       Please double check the csv data. \n' \
@@ -519,6 +521,9 @@ class ExporterObject(object):
                                         '       --force_int_columns \n' \
                                         '       --force_float_columns \n' \
                                         '       Error Details: {0}'.format(e)
+                        sys.exit(error_message)
+                    if self._write_response is False:
+                        error_message = 'Info: Problem inserting points, exiting...'
                         sys.exit(error_message)
                     print('Info: Wrote {0} points'.format(data_points_len))
                     data_points = list()
@@ -530,14 +535,11 @@ class ExporterObject(object):
                 print('Info: Inserting {0} data_points...'.format(data_points_len))
                 try:
                     if influx_version.startswith('0') or influx_version.startswith('1'):
-                        response = client.write_points(data_points)
-                        if response is False:
-                            error_message = 'Error: Problem inserting points, exiting...'
-                            sys.exit(error_message)
+                        self._write_response = client.write_points(data_points)
                     else:
-                        write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
-                        write_client.write(bucket_name, org_name, data_points)
-                        write_client.close()
+                        with client.write_api(write_options=WriteOptions(batch_size=batch_size),
+                                              error_callback=self.__error_cb) as write_client:
+                            write_client.write(bucket_name, org_name, data_points)
                 except influx_object.influxdb_client_error as e:
                     error_message = 'Error: System exited. Encounter data type conflict issue in influx. \n' \
                                     '       Please double check the csv data. \n' \
@@ -546,6 +548,9 @@ class ExporterObject(object):
                                     '       --force_int_columns \n' \
                                     '       --force_float_columns \n' \
                                     '       Error Details: {0}'.format(e)
+                    sys.exit(error_message)
+                if self._write_response is False:
+                    error_message = 'Error: Problem inserting points, exiting...'
                     sys.exit(error_message)
                 print('Info: Wrote {0} points'.format(data_points_len))
 
@@ -561,19 +566,18 @@ class ExporterObject(object):
                     fields[k] = v
                 count_point = [{'measurement': count_measurement, 'time': timestamp, 'fields': fields, 'tags': {}}]
                 if influx_version.startswith('0') or influx_version.startswith('1'):
-                    response = client.write_points(count_point)
-                    if response is False:
-                        error_message = 'Error: Problem inserting points, exiting...'
-                        sys.exit(error_message)
+                    self._write_response = client.write_points(count_point)
                 else:
-                    write_client = client.write_api(write_options=WriteOptions(batch_size=batch_size))
-                    write_client.write(bucket_name, org_name, count_point)
-                    write_client.close()
+                    with client.write_api(write_options=WriteOptions(batch_size=batch_size),
+                                          error_callback=self.__error_cb) as write_client:
+                        write_client.write(bucket_name, org_name, count_point)
                 print('Info: Wrote count measurement {0} points'.format(count_point))
 
                 self.match_count = defaultdict(int)
                 self.filter_count = defaultdict(int)
-
+            if self._write_response is False:
+                error_message = 'Error: Problem inserting points, exiting...'
+                sys.exit(error_message)
             print('Info: Done')
             print('')
 
