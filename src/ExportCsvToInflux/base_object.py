@@ -28,6 +28,9 @@ class BaseObject(object):
         :param target_name: the target name
         """
 
+        if target is None or str(target).lower() == 'none':
+            return
+
         get_type = type(target)
         ignore_exception = self.convert_boole(ignore_exception)
         try:
@@ -51,6 +54,9 @@ class BaseObject(object):
         :param lower: lower the string (default False)
         :return
         """
+
+        if string is None or str(string).lower() == 'none':
+            return []
 
         get_type = type(string)
         error_message = 'Error: The string should be list or string, use comma to separate. ' \
