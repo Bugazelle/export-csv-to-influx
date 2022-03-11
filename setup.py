@@ -57,7 +57,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'export_csv_to_influx = ExportCsvToInflux.exporter_object:export_csv_to_influx',
+            'export_csv_to_influx = ExportCsvToInflux.command_object:export_csv_to_influx',
         ],
     },
 )
