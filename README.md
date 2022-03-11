@@ -38,7 +38,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 
 > **Note:** 
 > 1. You could pass `*` to --field_columns to match all the fields: `--field_columns=*`, `--field_columns '*'`
-> 2. CSV data won't insert into influx again if no update. Use to force insert: `--force_insert_even_csv_no_update=True`, `--force_insert_even_csv_no_update True`
+> 2. CSV data won't insert into influx again if no update. Use to force insert， default True: `--force_insert_even_csv_no_update=True`, `--force_insert_even_csv_no_update True`
 > 3. If some csv cells have no value, auto fill the influx db based on column data type: `int: -999`, `float: -999.0`, `string: -`
 
 | #  | Option                                   | Mandatory              | Default           | Description                                                                                                                                                                                    |
@@ -77,6 +77,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 | 32 | `-fintc, --force_int_columns`            | No                     | None              | Force columns as int type, seperated as comma                                                                                                                                                  |
 | 33 | `-ffc, --force_float_columns`            | No                     | None              | Force columns as float type, seperated as comma                                                                                                                                                |
 | 34 | `-uniq, --unique`                        | No                     | False             | Write duplicated points                                                                                                                                                                        |
+| 35 | `--csv_charset, --csv_charset`           | No                     | None              | he csv charset. Default: None, which will auto detect                                                                                                                                          |
 
 ## Programmatically
 
@@ -124,50 +125,50 @@ timestamp,url,response_time
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">1</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Write whole data into influx</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086<br></pre>
+            <pre> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086<br></pre>
          </td>
       </tr>
       <tr>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">2</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Write whole data into influx, <span style="font-weight:bold"><strong>but: drop database or bucket</strong></span></td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --force_insert_even_csv_no_update True \<br>  --drop_database=True<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre> // The Read/Write API Token cannot create database. Before you using the --drop_database, make sure your toke have the access  <br> // See the bug here: https://github.com/influxdata/influxdb/issues/23170 <br> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
+            <pre> // The Read/Write API Token cannot create database. Before you using the --drop_database, make sure your toke have the access  <br> // See the bug here: https://github.com/influxdata/influxdb/issues/23170 <br> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
          </td>
       </tr>
       <tr>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">3</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Write part of data: <span style="font-weight:bold"><strong>timestamp matches 2022-03-07 and url matches sample-\d+</strong></span></td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --force_insert_even_csv_no_update True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+'<br></pre>
          </td>
       </tr>
       <tr>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">4</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Filter part of data, and write into influx: <span style="font-weight:bold"><strong>url filters sample</strong></span></td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --force_insert_even_csv_no_update True \<br>  --filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>&nbsp;&nbsp;--filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>&nbsp;&nbsp;--filter_columns url \<br>  --filter_by_reg 'sample'<br></pre>
          </td>
       </tr>
       <tr>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">5</td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">Enable count measurement. A new measurement named: <span style="font-weight:bold"><strong>demo.count</strong></span> generated, with match: <span style="font-weight:bold"><strong>timestamp matches 2022-03-07 and url matches sample-\d+</strong></span></td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --force_insert_even_csv_no_update True \<br>  --match_columns timestamp,url \<br>  --match_by_reg '2022-03-07,sample-\d+' \<br>  --enable_count_measurement True<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database True \<br>  --match_columns timestamp,url \<br>  --match_by_reg '2022-03-07,sample-\d+' \<br>  --enable_count_measurement True<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --force_insert_even_csv_no_update True \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+' \<br>&nbsp;&nbsp;--enable_count_measurement True<br></pre>
+            <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_measurement=True \<br>  --match_columns=timestamp,url \<br>  --match_by_reg='2022-03-07,sample-\d+' \<br>&nbsp;&nbsp;--enable_count_measurement True<br></pre>
          </td>
       </tr>
    </tbody>

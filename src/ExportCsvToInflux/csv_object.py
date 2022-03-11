@@ -1,8 +1,10 @@
+from chardet.universaldetector import UniversalDetector
 from collections import defaultdict
 from .base_object import BaseObject
 from itertools import tee
 from glob import glob
 import hashlib
+import codecs
 import types
 import time
 import json
@@ -11,12 +13,99 @@ import sys
 import os
 
 
+class UTF8Recoder:
+    """
+    Python2.7: Iterator that reads an encoded stream and reencodes the input to UTF-8
+    """
+
+    def __init__(self, f, encoding):
+        self.reader = codecs.getreader(encoding)(f)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.reader.next().encode("utf-8")
+
+
+class UnicodeDictReader:
+    """
+    Python2.7: A CSV reader which will iterate over lines in the CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, encoding="utf-8", **kwargs):
+        f = UTF8Recoder(f, encoding)
+        self.reader = csv.reader(f, **kwargs)
+        self.header = self.reader.next()
+
+    def next(self):
+        row = self.reader.next()
+        vals = [unicode(s, "utf-8") for s in row]
+        return dict((self.header[x], vals[x]) for x in range(len(self.header)))
+
+    def __iter__(self):
+        return self
+
+
 class CSVObject(object):
     """CSV Object"""
 
-    def __init__(self, delimiter=',', lineterminator='\n'):
+    python_version = sys.version_info.major
+
+    def __init__(self, delimiter=',', lineterminator='\n', csv_charset=None):
         self.delimiter = delimiter
         self.lineterminator = lineterminator
+        self.csv_charset = csv_charset
+
+    @classmethod
+    def detect_csv_charset(cls, file_name, **csv_object):
+        """Function: detect_csv_charset
+
+        :param file_name: the file name
+        :return return csv charset
+        """
+
+        detector = UniversalDetector()
+        detector.reset()
+
+        with open(file_name, 'rb') as f:
+            for row in f:
+                detector.feed(row)
+                if detector.done:
+                    break
+        detector.close()
+        encoding = detector.result.get('encoding')
+        csv_object['csv_charset'] = encoding
+
+        return cls(**csv_object)
+
+    def compatible_dict_reader(self, f, encoding, **kwargs):
+        """Function: compatible_dict_reader
+
+        :param f: the file object from compatible_open
+        :param encoding: the encoding charset
+        :return return csvReader
+        """
+
+        if self.python_version == 2:
+            return UnicodeDictReader(f, encoding=encoding, **kwargs)
+        else:
+            return csv.DictReader(f, **kwargs)
+
+    def compatible_open(self, file_name, encoding, mode='r'):
+        """Function: compatible_open
+
+        :param file_name: the file name
+        :param mode: the open mode
+        :param encoding: the encoding charset
+        :return return file object
+        """
+
+        if self.python_version == 2:
+            return open(file_name, mode=mode)
+        else:
+            return open(file_name, mode=mode, encoding=encoding)
 
     def get_csv_header(self, file_name):
         """Function: get_csv_header.
@@ -28,15 +117,21 @@ class CSVObject(object):
 
         self.valid_file_exist(file_name)
 
-        with open(file_name) as f:
+        with self.compatible_open(file_name, encoding=self.csv_charset) as f:
             sniffer = csv.Sniffer()
             try:
-                has_header = sniffer.has_header(f.read(40960))
+                has_header = sniffer.has_header(f.read(40960))  # python3.x
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                f.seek(0)
+                has_header = sniffer.has_header(f.read(40960).encode(self.csv_charset))  # python2.x
             except csv.Error:
                 has_header = False
+
             f.seek(0)
-            csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
-            headers = csv_reader.fieldnames
+            csv_reader = self.compatible_dict_reader(f, encoding=self.csv_charset, delimiter=self.delimiter,
+                                                     lineterminator=self.lineterminator)
+            for row in csv_reader:
+                headers = list(row.keys())
             is_header = not any(field.isdigit() for field in headers)
             headers = headers if has_header or is_header else []
 
@@ -134,10 +229,10 @@ class CSVObject(object):
         """
 
         has_header = self.get_csv_header(file_name)
-
-        with open(file_name) as f:
-            csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
+        with self.compatible_open(file_name, encoding=self.csv_charset) as f:
             count = 0 if has_header else 1
+            csv_reader = self.compatible_dict_reader(f, encoding=self.csv_charset, delimiter=self.delimiter,
+                                                     lineterminator=self.lineterminator)
             for row in csv_reader:
                 count += 1
 
@@ -181,9 +276,10 @@ class CSVObject(object):
         f = None
         if file_name:
             has_header = self.get_csv_header(file_name)
-            f = open(file_name)
-            csv_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
-            csv_reader, csv_reader_bk = tee(csv_reader)
+            with self.compatible_open(file_name, encoding=self.csv_charset) as f:
+                csv_reader = self.compatible_dict_reader(f, encoding=self.csv_charset, delimiter=self.delimiter,
+                                                         lineterminator=self.lineterminator)
+                csv_reader, csv_reader_bk = tee(csv_reader)
 
         # Process
         for row in csv_reader:
@@ -314,11 +410,12 @@ class CSVObject(object):
         target_writer = None
         target_file = None
         if save_csv_file:
-            target_file = open(target, 'w+')
+            target_file = self.compatible_open(target, mode='w+', encoding=self.csv_charset)
             target_writer = csv.writer(target_file, delimiter=self.delimiter, lineterminator=self.lineterminator)
 
-        with open(file_name) as f:
-            source_reader = csv.DictReader(f, delimiter=self.delimiter, lineterminator=self.lineterminator)
+        with self.compatible_open(file_name, encoding=self.csv_charset) as f:
+            source_reader = self.compatible_dict_reader(f, encoding=self.csv_charset, delimiter=self.delimiter,
+                                                        lineterminator=self.lineterminator)
             new_headers = [list(x.keys())[0] for x in data]
             row_id = 0
             for row in source_reader:
@@ -342,7 +439,11 @@ class CSVObject(object):
                 values += new_values
                 row_id += 1
                 if save_csv_file:
-                    target_writer.writerow(values)
+                    try:
+                        target_writer.writerow(values)
+                    except (UnicodeEncodeError, UnicodeDecodeError):
+                        values = [v.encode('utf-8') for v in values]
+                        target_writer.writerow(values)
 
                 yield dict(zip(headers, values))
 

@@ -6,7 +6,6 @@ from .csv_object import CSVObject
 from pytz import timezone
 import datetime
 import uuid
-import csv
 import sys
 import os
 import re
@@ -29,7 +28,8 @@ class ExporterObject(object):
                               row,
                               int_type,
                               float_type,
-                              conf):
+                              conf,
+                              encoding):
         """Private function: __process_tags_fields"""
 
         results = dict()
@@ -53,7 +53,11 @@ class ExporterObject(object):
                         print('Warning: Failed to force "{0}" to float, skip...'.format(v))
 
                 # If field is empty
-                if len(str(v)) == 0:
+                try:
+                    len_v = len(str(v))
+                except (UnicodeDecodeError, UnicodeEncodeError):
+                    len_v = 1  # Python2.7: If error happens, that means it has at least one character
+                if len_v == 0:
                     # Process the empty
                     if int_type[column] is True:
                         v = -999
@@ -103,8 +107,12 @@ class ExporterObject(object):
                 self.filter_count[k] = csv_file_length
 
             # Check string, regex
+            try:
+                v = str(v)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                v = v.encode('utf-8')
             check_by_string_status = v in check_by_string
-            check_by_regex_status = any(re.search(the_match, str(v), re.IGNORECASE) for the_match in check_by_regex)
+            check_by_regex_status = any(re.search(the_match, v, re.IGNORECASE) for the_match in check_by_regex)
             if key_status and (check_by_string_status or check_by_regex_status):
                 check_status[k] = True
                 if check_type == 'match':
@@ -282,13 +290,16 @@ class ExporterObject(object):
         :key str bucket_name: for 2.x only, my bucket (default my-bucket)
         :key str token: for 2.x only, token (default None)
         :key bool unique: insert the duplicated data (default False)
+        :key str csv_charset: the csv charset (default None, which will auto detect)
         """
 
         # Init the conf
         conf = Configuration(**kwargs)
 
         # Init: object
-        csv_object = CSVObject(delimiter=conf.delimiter, lineterminator=conf.lineterminator)
+        csv_object = CSVObject(delimiter=conf.delimiter,
+                               lineterminator=conf.lineterminator,
+                               csv_charset=conf.csv_charset)
         influx_object = InfluxObject(db_server_name=conf.db_server_name,
                                      db_user=conf.db_user,
                                      db_password=conf.db_password,
@@ -316,6 +327,8 @@ class ExporterObject(object):
         # Process csv_file
         csv_file_generator = csv_object.search_files_in_dir(conf.csv_file)
         for csv_file_item in csv_file_generator:
+            if conf.csv_charset is None:
+                csv_object = csv_object.detect_csv_charset(file_name=csv_file_item, **csv_object.__dict__)
             csv_file_length = csv_object.get_csv_lines_count(csv_file_item)
             csv_file_md5 = csv_object.get_file_md5(csv_file_item)
             csv_headers = csv_object.get_csv_header(csv_file_item)
@@ -342,8 +355,11 @@ class ExporterObject(object):
             filter_columns = self.__validate_columns(csv_headers, conf.filter_columns)
 
             # Validate time_column
-            with open(csv_file_item) as f:
-                csv_reader = csv.DictReader(f, delimiter=conf.delimiter, lineterminator=conf.lineterminator)
+            with csv_object.compatible_open(csv_file_item, encoding=csv_object.csv_charset) as f:
+                csv_reader = csv_object.compatible_dict_reader(f,
+                                                               encoding=csv_object.csv_charset,
+                                                               delimiter=conf.delimiter,
+                                                               lineterminator=conf.lineterminator)
                 time_column_exists = True
                 for row in csv_reader:
                     try:
@@ -359,8 +375,11 @@ class ExporterObject(object):
             new_csv_file_exists = os.path.exists(new_csv_file)
             no_new_data_status = False
             if new_csv_file_exists:
-                with open(new_csv_file) as f:
-                    csv_reader = csv.DictReader(f, delimiter=conf.delimiter, lineterminator=conf.lineterminator)
+                with csv_object.compatible_open(new_csv_file, encoding=csv_object.csv_charset) as f:
+                    csv_reader = csv_object.compatible_dict_reader(f,
+                                                                   encoding=csv_object.csv_charset,
+                                                                   delimiter=conf.delimiter,
+                                                                   lineterminator=conf.lineterminator)
                     for row in csv_reader:
                         try:
                             new_csv_file_md5 = row['md5']
@@ -368,7 +387,7 @@ class ExporterObject(object):
                             break
                         if new_csv_file_md5 == csv_file_md5 and conf.force_insert_even_csv_no_update is False:
                             warning_message = 'Warning: No new data found, ' \
-                                              'exporter stop/jump for {0}...'.format(csv_file_item)
+                                              'writer stop/jump for {0}...'.format(csv_file_item)
                             print(warning_message)
                             no_new_data_status = True
                             # sys.exit(warning_message)
@@ -426,14 +445,16 @@ class ExporterObject(object):
                                                   row=row,
                                                   int_type=int_type,
                                                   float_type=float_type,
-                                                  conf=conf)
+                                                  conf=conf,
+                                                  encoding=csv_object.csv_charset)
 
                 # Process fields
                 fields = self.__process_tags_fields(columns=field_columns,
                                                     row=row,
                                                     int_type=int_type,
                                                     float_type=float_type,
-                                                    conf=conf)
+                                                    conf=conf,
+                                                    encoding=csv_object.csv_charset)
 
                 point = {'measurement': conf.db_measurement, 'time': timestamp, 'fields': fields, 'tags': tags}
                 data_points.append(point)

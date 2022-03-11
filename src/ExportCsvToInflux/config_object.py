@@ -43,6 +43,7 @@ class Configuration(object):
         self.bucket_name = kwargs.get('bucket_name', 'my-bucket')
         self.token = kwargs.get('token', None)
         self.unique = kwargs.get('unique', False)
+        self.csv_charset = kwargs.get('csv_charset', None)
 
         # Validate conf
         base_object = BaseObject()
@@ -74,6 +75,7 @@ class Configuration(object):
         base_object.validate_str(self.bucket_name, target_name='bucket_name')
         base_object.validate_str(self.token, target_name='token')
         self.unique = self.__validate_bool_string(self.unique)
+        base_object.validate_str(self.csv_charset, target_name='csv_charset')
 
         # Fields should not duplicate in force_string_columns, force_int_columns, force_float_columns
         all_force_columns = self.force_string_columns + self.force_int_columns + self.force_float_columns
@@ -86,6 +88,17 @@ class Configuration(object):
                                                                      self.force_string_columns,
                                                                      self.force_int_columns,
                                                                      self.force_float_columns)
+            sys.exit(error_message)
+
+        # Fields should not duplicate in match_columns, filter_columns
+        all_force_columns = self.match_columns + self.filter_columns
+        duplicates = [item for item, count in collections.Counter(all_force_columns).items() if count > 1]
+        if duplicates:
+            error_message = 'Error: Find duplicate items: {0} in: \n' \
+                            '       match_columns: {1} \n' \
+                            '       filter_columns: {2} '.format(duplicates,
+                                                                 self.match_columns,
+                                                                 self.filter_columns)
             sys.exit(error_message)
 
         # Validate: batch_size

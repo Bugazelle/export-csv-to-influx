@@ -97,6 +97,8 @@ def export_csv_to_influx():
                         help='Force columns as float type, separated by comma. Default: None.')
     parser.add_argument('-uniq', '--unique', nargs='?', default=False, const=False,
                         help='Write duplicated points. Default: False.')
+    parser.add_argument('--csv_charset', '--csv_charset', nargs='?', default=None, const=None,
+                        help='The csv charset. Default: None, which will auto detect')
     parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args(namespace=user_namespace)
@@ -135,6 +137,7 @@ def export_csv_to_influx():
         'org_name': args.org,
         'bucket_name': args.bucket,
         'token': 'None' if args.token is None else args.token,
-        'unique': args.unique
+        'unique': args.unique,
+        'csv_charset': args.csv_charset
     }
     exporter.export_csv_to_influx(**input_data)
