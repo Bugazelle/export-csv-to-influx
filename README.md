@@ -38,7 +38,7 @@ You could use `export_csv_to_influx -h` to see the help guide.
 
 > **Note:** 
 > 1. You could pass `*` to --field_columns to match all the fields: `--field_columns=*`, `--field_columns '*'`
-> 2. CSV data won't insert into influx again if no update. Use to force insert， default True: `--force_insert_even_csv_no_update=True`, `--force_insert_even_csv_no_update True`
+> 2. CSV data won't insert into influx again if no update. Use to force insert, default True: `--force_insert_even_csv_no_update=True`, `--force_insert_even_csv_no_update True`
 > 3. If some csv cells have no value, auto fill the influx db based on column data type: `int: -999`, `float: -999.0`, `string: -`
 
 | #  | Option                                   | Mandatory              | Default           | Description                                                                                                                                                                                    |
