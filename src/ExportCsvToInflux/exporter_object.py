@@ -1,8 +1,10 @@
 from pytz.exceptions import UnknownTimeZoneError
 from .config_object import Configuration
 from .influx_object import InfluxObject
+from decimal import InvalidOperation
 from collections import defaultdict
 from .csv_object import CSVObject
+from decimal import Decimal
 from pytz import timezone
 import datetime
 import uuid
@@ -178,17 +180,16 @@ class ExporterObject(object):
 
         try:
             # raise if not posix-time-like
-            timestamp_str = str(float(row[conf.time_column]))
-            timestamp_magnitude = len(timestamp_str.split('.')[0])
+            timestamp_decimal = Decimal(row[conf.time_column])
+            timestamp_str = str(timestamp_decimal)
             timestamp_remove_decimal = int(
                 str(timestamp_str).replace('.', '')
             )
-            # add zeros to convert to nanoseconds
-            timestamp_influx = (
-                    '{:<0' + str(9 + timestamp_magnitude) + 'd}'
-            ).format(timestamp_remove_decimal)
+            # add zeros to convert to nanoseconds: influxdb time is 19 digital length
+            timestamp_influx = '{:<019d}'.format(timestamp_remove_decimal)
+            timestamp_influx = timestamp_influx[:19]  # deal with length > 19 timestamp
             timestamp = int(timestamp_influx)
-        except ValueError:
+        except (ValueError, InvalidOperation):
             try:
                 datetime_naive = datetime.datetime.strptime(row[conf.time_column], conf.time_format)
                 datetime_local = timezone(conf.time_zone).localize(datetime_naive)
@@ -252,6 +253,34 @@ class ExporterObject(object):
             self.match_count = defaultdict(int)
             self.filter_count = defaultdict(int)
             print('Info: Wrote count measurement {0} points'.format(count_point))
+
+    @staticmethod
+    def __no_new_data_check(csv_file_item, csv_object, conf, csv_file_md5):
+        """Private function: __no_new_data_check"""
+
+        new_csv_file = '{0}_influx.csv'.format(csv_file_item.replace('.csv', ''))
+        new_csv_file_exists = os.path.exists(new_csv_file)
+        no_new_data_status = False
+        if new_csv_file_exists:
+            with csv_object.compatible_open(new_csv_file, encoding=csv_object.csv_charset) as f:
+                csv_reader = csv_object.compatible_dict_reader(f,
+                                                               encoding=csv_object.csv_charset,
+                                                               delimiter=conf.delimiter,
+                                                               lineterminator=conf.lineterminator)
+                for row in csv_reader:
+                    try:
+                        new_csv_file_md5 = row['md5']
+                    except KeyError:
+                        break
+                    if new_csv_file_md5 == csv_file_md5 and conf.force_insert_even_csv_no_update is False:
+                        warning_message = 'Warning: No new data found, ' \
+                                          'writer stop/jump for {0}...'.format(csv_file_item)
+                        print(warning_message)
+                        no_new_data_status = True
+                        # sys.exit(warning_message)
+                    break
+
+        return no_new_data_status, new_csv_file
 
     def export_csv_to_influx(self, **kwargs):
         """Function: export_csv_to_influx
@@ -371,27 +400,7 @@ class ExporterObject(object):
                     break
 
             # Check the timestamp, and generate the csv with checksum
-            new_csv_file = '{0}_influx.csv'.format(csv_file_item.replace('.csv', ''))
-            new_csv_file_exists = os.path.exists(new_csv_file)
-            no_new_data_status = False
-            if new_csv_file_exists:
-                with csv_object.compatible_open(new_csv_file, encoding=csv_object.csv_charset) as f:
-                    csv_reader = csv_object.compatible_dict_reader(f,
-                                                                   encoding=csv_object.csv_charset,
-                                                                   delimiter=conf.delimiter,
-                                                                   lineterminator=conf.lineterminator)
-                    for row in csv_reader:
-                        try:
-                            new_csv_file_md5 = row['md5']
-                        except KeyError:
-                            break
-                        if new_csv_file_md5 == csv_file_md5 and conf.force_insert_even_csv_no_update is False:
-                            warning_message = 'Warning: No new data found, ' \
-                                              'writer stop/jump for {0}...'.format(csv_file_item)
-                            print(warning_message)
-                            no_new_data_status = True
-                            # sys.exit(warning_message)
-                        break
+            no_new_data_status, new_csv_file = self.__no_new_data_check(csv_file_item, csv_object, conf, csv_file_md5)
             if no_new_data_status:
                 continue
             data = [{'md5': [csv_file_md5] * csv_file_length}]
@@ -409,7 +418,8 @@ class ExporterObject(object):
             data_points = list()
             count = 0
             timestamp = 0
-            convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(csv_reader=csv_reader_data)
+            convert_csv_data_to_int_float = csv_object.convert_csv_data_to_int_float(csv_reader=csv_reader_data,
+                                                                                     ignore_filed=conf.time_column)
             for row, int_type, float_type in convert_csv_data_to_int_float:
                 # Process Match & Filter: If match_columns exists and filter_columns not exists
                 match_status = self.__check_match_and_filter(row,

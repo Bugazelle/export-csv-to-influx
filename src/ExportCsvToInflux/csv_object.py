@@ -238,7 +238,7 @@ class CSVObject(object):
 
             return count
 
-    def convert_csv_data_to_int_float(self, file_name=None, csv_reader=None):
+    def convert_csv_data_to_int_float(self, file_name=None, csv_reader=None, ignore_filed=None):
         """Function: convert_csv_data_to_int_float
 
         :param file_name: the file name (default None)
@@ -252,6 +252,7 @@ class CSVObject(object):
                     {'csv_header_1': 'value', 'csv_header_2': 'value', 'csv_header_3': 'value', ...},
                     ...
                 ]
+        :param ignore_filed: ignore the certain column, case sensitive
         """
 
         # init
@@ -289,6 +290,11 @@ class CSVObject(object):
                 len_value = len(value)
                 # Continue If Value Empty
                 if len_value == 0:
+                    int_type[key].append(False)
+                    float_type[key].append(False)
+                    continue
+                # Continue if ignore_filed is provided
+                if ignore_filed is not None and ignore_filed == key:
                     int_type[key].append(False)
                     float_type[key].append(False)
                     continue
