@@ -20,12 +20,16 @@ class BaseObject(object):
 
         return target
 
-    def validate_str(self, target, ignore_exception=False):
+    def validate_str(self, target, ignore_exception=False, target_name=None):
         """Function: validate_string
 
-        :param target: the string
+        :param target: the target value
         :param ignore_exception: the True or False
+        :param target_name: the target name
         """
+
+        if target is None or str(target).lower() == 'none':
+            return
 
         get_type = type(target)
         ignore_exception = self.convert_boole(ignore_exception)
@@ -34,7 +38,10 @@ class BaseObject(object):
         except NameError:
             string_type = get_type is str
         if not string_type and ignore_exception is False:
-            error_message = 'Error: The {0} is not string type. Please check.'.format(target)
+            if target_name:
+                error_message = 'Error: The {0} - {1} is not string type. Please check.'.format(target_name, target)
+            else:
+                error_message = 'Error: The {0} is not string type. Please check.'.format(target)
             sys.exit(error_message)
 
         return string_type
@@ -47,6 +54,9 @@ class BaseObject(object):
         :param lower: lower the string (default False)
         :return
         """
+
+        if string is None or str(string).lower() == 'none':
+            return []
 
         get_type = type(string)
         error_message = 'Error: The string should be list or string, use comma to separate. ' \
