@@ -38,6 +38,7 @@ setup(
         'influxdb>=5.3.1',
         'influxdb-client[ciso]>=1.25.0' if version_info >= (3, 6) else '',
         'python-dateutil>=2.8.0',
+        'chardet>=4.0.0'
     ],
     download_url=download_url,
     url=url,
