@@ -14,6 +14,7 @@ def export_csv_to_influx():
     # Parse: Parse the server name, and judge the influx version
     parser.add_argument('-s', '--server', nargs='?', default='localhost:8086', const='localhost:8086',
                         help='InfluxDB Server address. Default: localhost:8086')
+    parser.add_argument('-v', '--version', action="version", version=__version__)
     user_namespace = UserNamespace()
     parser.parse_known_args(namespace=user_namespace)
     influx_object = InfluxObject(db_server_name=user_namespace.server)
@@ -99,7 +100,6 @@ def export_csv_to_influx():
                         help='Write duplicated points. Default: False.')
     parser.add_argument('--csv_charset', '--csv_charset', nargs='?', default=None, const=None,
                         help='The csv charset. Default: None, which will auto detect')
-    parser.add_argument('-v', '--version', action="version", version=__version__)
 
     args = parser.parse_args(namespace=user_namespace)
     exporter = ExporterObject()

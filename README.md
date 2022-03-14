@@ -138,7 +138,7 @@ timestamp,url,response_time
             <pre>export_csv_to_influx \<br>  --csv demo.csv \<br>  --dbname demo \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --user admin \<br>  --password admin \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
          </td>
          <td style="border-color:inherit;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
-            <pre> // The Read/Write API Token cannot create database. Before you using the --drop_database, make sure your toke have the access  <br> // See the bug here: https://github.com/influxdata/influxdb/issues/23170 <br> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
+            <pre> // The Read/Write API Token cannot create bucket. Before you using the --drop_database, make sure your toke have the access  <br> // See the bug here: https://github.com/influxdata/influxdb/issues/23170 <br> export_csv_to_influx \<br>  --csv demo.csv \<br>  --org my-org \<br>  --bucket my-bucket \<br>  --measurement demo \<br>  --tag_columns url \<br>  --field_columns response_time \<br>  --token YourToken \<br>  --server 127.0.0.1:8086 \<br>  --drop_database=True<br></pre>
          </td>
       </tr>
       <tr>
